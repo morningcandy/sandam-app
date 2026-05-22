@@ -270,7 +270,13 @@ export default function AdminPage() {
       setSlots(Array.isArray(s) ? s : [])
       setReservations(Array.isArray(r) ? r : [])
       setAllReservations(Array.isArray(all) ? all : [])
-      const saved = cfg?.openAt ? cfg.openAt.slice(0, 16) : ''
+      // Supabase에서 UTC로 오는 값을 KST(+9시간)로 변환해서 입력창에 표시
+      const saved = cfg?.openAt
+        ? (() => {
+            const d = new Date(cfg.openAt)
+            return new Date(d.getTime() + 9 * 3600 * 1000).toISOString().slice(0, 16)
+          })()
+        : ''
       setOpenAt(saved)
       setOpenAtInput(saved)
     } catch (e) {
@@ -316,7 +322,9 @@ export default function AdminPage() {
   const handleSaveOpenAt = async () => {
     setOpenAtSaving(true)
     try {
-      await updateConfig({ openAt: openAtInput || null })
+      // KST 시간으로 입력된 값에 +09:00 붙여서 UTC로 올바르게 저장
+      const saveValue = openAtInput ? openAtInput + ':00+09:00' : null
+      await updateConfig({ openAt: saveValue })
       setOpenAt(openAtInput)
       alert(openAtInput ? `오픈 시간이 저장되었습니다.\n${fmtOpenAt(openAtInput)}` : '예약 오픈 시간 제한이 해제되었습니다.')
     } catch (e) {
@@ -375,16 +383,16 @@ export default function AdminPage() {
   const reservedCount = rosterWithStatus.filter(s => s.status === '예약 완료' || s.status === '상담 완료').length
 
   const fmtDate = (d) => d.replace('2026-', '').replace('-', '월 ') + '일'
+  // openAt/openAtInput은 KST "YYYY-MM-DDTHH:mm" 형식이므로 직접 파싱
   const fmtOpenAt = (dt) => {
     if (!dt) return ''
-    const d = new Date(dt)
-    const month = d.getMonth() + 1
-    const day = d.getDate()
-    const h = d.getHours()
-    const m = String(d.getMinutes()).padStart(2, '0')
-    const ampm = h < 12 ? '오전' : '오후'
-    const h12 = h % 12 || 12
-    return `${month}/${day} ${ampm} ${h12}:${m}`
+    const [date, time] = dt.split('T')
+    const [, month, day] = date.split('-')
+    const [h, m] = time.split(':')
+    const hour = parseInt(h)
+    const ampm = hour < 12 ? '오전' : '오후'
+    const h12 = hour % 12 || 12
+    return `${parseInt(month)}/${parseInt(day)} ${ampm} ${h12}:${m}`
   }
   const inp = { padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 13, outline: 'none', background: '#fff', color: '#111827' }
 

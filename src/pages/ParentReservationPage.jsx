@@ -74,13 +74,15 @@ export default function ParentReservationPage() {
   }
 
   const isReservationOpen = !openAt || new Date() >= new Date(openAt)
+  // Supabase에서 오는 UTC ISO 문자열을 KST(+9)로 변환해서 표시
   const fmtOpenAt = (dt) => {
     if (!dt) return ''
     const d = new Date(dt)
-    const month = d.getMonth() + 1
-    const day = d.getDate()
-    const h = d.getHours()
-    const m = String(d.getMinutes()).padStart(2, '0')
+    const kst = new Date(d.getTime() + 9 * 3600 * 1000)
+    const month = kst.getUTCMonth() + 1
+    const day = kst.getUTCDate()
+    const h = kst.getUTCHours()
+    const m = String(kst.getUTCMinutes()).padStart(2, '0')
     const ampm = h < 12 ? '오전' : '오후'
     const h12 = h % 12 || 12
     return `${month}월 ${day}일 ${ampm} ${h12}:${m}`
