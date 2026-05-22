@@ -1,0 +1,33 @@
+// 2학년 3반 학급 명단 (번호 21, 28 결번)
+export const CLASS_ROSTER = [
+  { no: 1,  studentNumber: '20301', name: '강민희' },
+  { no: 2,  studentNumber: '20302', name: '김도연' },
+  { no: 3,  studentNumber: '20303', name: '김미소' },
+  { no: 4,  studentNumber: '20304', name: '김서진' },
+  { no: 5,  studentNumber: '20305', name: '김서현' },
+  { no: 6,  studentNumber: '20306', name: '김지원' },
+  { no: 7,  studentNumber: '20307', name: '박지현' },
+  { no: 8,  studentNumber: '20308', name: '서다애' },
+  { no: 9,  studentNumber: '20309', name: '손예지' },
+  { no: 10, studentNumber: '20310', name: '송윤서' },
+  { no: 11, studentNumber: '20311', name: '신연우' },
+  { no: 12, studentNumber: '20312', name: '신지은' },
+  { no: 13, studentNumber: '20313', name: '신현서' },
+  { no: 14, studentNumber: '20314', name: '신혜연' },
+  { no: 15, studentNumber: '20315', name: '안안나' },
+  { no: 16, studentNumber: '20316', name: '염서정' },
+  { no: 17, studentNumber: '20317', name: '이서현' },
+  { no: 18, studentNumber: '20318', name: '이선유' },
+  { no: 19, studentNumber: '20319', name: '이예나' },
+  { no: 20, studentNumber: '20320', name: '이현정' },
+  // 21 결번
+  { no: 22, studentNumber: '20322', name: '전채희' },
+  { no: 23, studentNumber: '20323', name: '정서연' },
+  { no: 24, studentNumber: '20324', name: '정아인' },
+  { no: 25, studentNumber: '20325', name: '조연서' },
+  { no: 26, studentNumber: '20326', name: '차예린' },
+  { no: 27, studentNumber: '20327', name: '최은성' },
+  // 28 결번
+  { no: 29, studentNumber: '20329', name: '한정흔' },
+  { no: 30, studentNumber: '20330', name: '최민서' },
+]
