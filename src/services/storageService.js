@@ -1,7 +1,12 @@
 // API 클라이언트 - Express+SQLite 백엔드와 통신
+// 로컬: /api (Vite proxy → localhost:3001)
+// 프로덕션: VITE_API_URL/api (Railway 백엔드 URL)
+const API_BASE = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : '/api'
 
 async function apiFetch(path, options = {}) {
-  const res = await fetch('/api' + path, {
+  const res = await fetch(API_BASE + path, {
     headers: { 'Content-Type': 'application/json' },
     ...options,
   })

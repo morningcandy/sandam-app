@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import {
   getAllSlots, getAllReservations, addSlot, deleteSlot,
   getSlotsByDate, getReservationsByDate,
@@ -397,7 +397,7 @@ export default function AdminPage() {
           <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>학부모 상담 예약실</p>
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <a href="/" style={{ fontSize: 13, color: '#2563eb', textDecoration: 'none' }}>학부모 페이지</a>
+          <Link to="/" style={{ fontSize: 13, color: '#2563eb', textDecoration: 'none' }}>학부모 페이지</Link>
           <button onClick={load} style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', fontSize: 13, color: '#374151', cursor: 'pointer' }}>새로고침</button>
           <button onClick={handleLogout} style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', fontSize: 13, color: '#6b7280', cursor: 'pointer' }}>로그아웃</button>
         </div>

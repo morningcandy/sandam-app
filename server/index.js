@@ -6,7 +6,10 @@ const path = require('path')
 const app = express()
 const PORT = 3001
 
-app.use(cors({ origin: 'http://localhost:5173' }))
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
+  : ['http://localhost:5173']
+app.use(cors({ origin: allowedOrigins }))
 app.use(express.json())
 
 // 학급 명단 (이름 → 학번 매핑)

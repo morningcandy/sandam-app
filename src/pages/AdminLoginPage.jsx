@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 
 /**
  * ⚠️ 임시 보안: 클라이언트 사이드 비밀번호 비교 방식입니다.
@@ -104,7 +104,7 @@ export default function AdminLoginPage() {
         </div>
 
         <p style={{ marginTop: 20, textAlign: 'center', fontSize: 13, color: '#9ca3af' }}>
-          <a href="/" style={{ color: '#2563eb', textDecoration: 'none' }}>← 학부모 예약 페이지로 돌아가기</a>
+          <Link to="/" style={{ color: '#2563eb', textDecoration: 'none' }}>← 학부모 예약 페이지로 돌아가기</Link>
         </p>
       </div>
     </div>
