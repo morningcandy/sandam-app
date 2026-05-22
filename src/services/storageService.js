@@ -10,7 +10,10 @@ async function apiFetch(path, options = {}) {
     headers: { 'Content-Type': 'application/json' },
     ...options,
   })
-  const data = await res.json().catch(() => ({}))
+  // JSON 파싱 실패(HTML 등 비정상 응답) 시 에러로 처리
+  const data = await res.json().catch(() => {
+    throw new Error(`응답 파싱 오류 (${res.status})`)
+  })
   if (!res.ok) throw new Error(data.error || `서버 오류 (${res.status})`)
   return data
 }

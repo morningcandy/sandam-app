@@ -36,7 +36,7 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
     parentName: '',
     parentPhone: '',
     counselingContent: '',
-    counselingMethod: slot.allowedMethods[0],
+    counselingMethod: (slot.allowedMethods ?? [])[0] ?? '',
     consent: false,
   })
   const [nameError, setNameError] = useState('')
@@ -196,11 +196,11 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
             </div>
             <div style={{ marginBottom: 14 }}>
               <label style={labelStyle}>상담 방식</label>
-              {slot.allowedMethods.length === 1 ? (
+              {(slot.allowedMethods ?? []).length === 1 ? (
                 <p style={{ fontSize: 14, color: '#374151' }}>{slot.allowedMethods[0]}</p>
               ) : (
                 <div style={{ display: 'flex', gap: 16, marginTop: 4 }}>
-                  {slot.allowedMethods.map(m => (
+                  {(slot.allowedMethods ?? []).map(m => (
                     <label key={m} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, cursor: 'pointer' }}>
                       <input type="radio" name="method" value={m}
                         checked={form.counselingMethod === m}

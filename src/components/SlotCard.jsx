@@ -35,7 +35,8 @@ const styles = {
 export default function SlotCard({ slot, onReserve }) {
   const activeCount = slot.activeCount ?? 0
   const isFull = activeCount >= slot.maxReservations
-  const isPhoneOnly = slot.allowedMethods.length === 1 && slot.allowedMethods[0] === '전화'
+  const allowedMethods = Array.isArray(slot.allowedMethods) ? slot.allowedMethods : []
+  const isPhoneOnly = allowedMethods.length === 1 && allowedMethods[0] === '전화'
 
   return (
     <div style={{ ...styles.card, ...(isFull ? styles.cardFull : {}) }}>

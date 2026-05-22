@@ -267,10 +267,10 @@ export default function AdminPage() {
         getAllReservations(),
         getConfig(),
       ])
-      setSlots(s)
-      setReservations(r)
-      setAllReservations(all)
-      const saved = cfg.openAt ? cfg.openAt.slice(0, 16) : ''
+      setSlots(Array.isArray(s) ? s : [])
+      setReservations(Array.isArray(r) ? r : [])
+      setAllReservations(Array.isArray(all) ? all : [])
+      const saved = cfg?.openAt ? cfg.openAt.slice(0, 16) : ''
       setOpenAt(saved)
       setOpenAtInput(saved)
     } catch (e) {

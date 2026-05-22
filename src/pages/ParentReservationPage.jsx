@@ -42,9 +42,10 @@ export default function ParentReservationPage() {
     setSlotsLoading(true)
     try {
       const data = await getSlotsByDate(date)
-      setSlots(data)
+      setSlots(Array.isArray(data) ? data : [])
     } catch (e) {
       console.error(e)
+      setSlots([])
     } finally {
       setSlotsLoading(false)
     }
@@ -64,7 +65,7 @@ export default function ParentReservationPage() {
     setMyReservations(null)
     try {
       const data = await getReservationsByStudentName(lookupName.trim(), lookupPhone.trim())
-      setMyReservations(data)
+      setMyReservations(Array.isArray(data) ? data : [])
     } catch (e) {
       setLookupError(e.message)
     } finally {
