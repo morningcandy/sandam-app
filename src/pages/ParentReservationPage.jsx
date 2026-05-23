@@ -137,7 +137,7 @@ export default function ParentReservationPage() {
             </div>
             <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13, color: '#4b5563' }}>
               <span>📞 010-9551-0903</span>
-              <span>📅 상담 신청: 5월 27일 오후 1시 오픈</span>
+              <span>📅 상담 신청: 5/27(화) 오후 1시 ~ 5/29(목) 오후 1시</span>
             </div>
           </div>
         </div>
