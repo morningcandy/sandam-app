@@ -184,6 +184,18 @@ export async function getReservationsByStudentName(studentName, parentPhone) {
   return (data ?? []).map(mapReservation)
 }
 
+export async function getSlotAvailability(slotId) {
+  const [{ data: slotData, error: slotErr }, { data: resData }] = await Promise.all([
+    supabase.from('slots').select('max_reservations').eq('id', slotId).single(),
+    supabase.from('reservations').select('id').eq('slot_id', slotId).neq('status', '예약 취소'),
+  ])
+  if (slotErr) throw new Error(slotErr.message)
+  return {
+    maxReservations: slotData.max_reservations,
+    activeCount: resData?.length ?? 0,
+  }
+}
+
 export async function addReservation(reservation) {
   const { data, error } = await supabase
     .from('reservations')

@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { addReservation, getReservationsByStudentNumber } from '../services/storageService'
+import { addReservation, getReservationsByStudentNumber, getSlotAvailability } from '../services/storageService'
 import { CLASS_ROSTER } from '../data/classRoster'
 
 const ROSTER_MAP = Object.fromEntries(CLASS_ROSTER.map(s => [s.name, s.studentNumber]))
@@ -133,6 +133,13 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
     setLoading(true)
     setError('')
     try {
+      // 실시간 슬롯 정원 확인
+      const { activeCount, maxReservations } = await getSlotAvailability(slot.id)
+      if (activeCount >= maxReservations) {
+        setError('죄송합니다. 해당 상담 시간이 마감되었습니다. 다른 시간을 선택해 주세요.')
+        return
+      }
+
       // 중복 예약 확인
       const existing = await getReservationsByStudentNumber(form.studentNumber)
       const activeRes = existing.find(r => r.status !== '예약 취소')
