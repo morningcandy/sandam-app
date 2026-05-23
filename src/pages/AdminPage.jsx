@@ -258,6 +258,65 @@ function ClassRosterPanel({ roster, reservedCount }) {
   )
 }
 
+// ── QR 코드 배포 ──────────────────────────────────────────────
+function QRSection() {
+  const parentUrl = typeof window !== 'undefined'
+    ? window.location.origin
+    : 'https://sandam-app.vercel.app'
+  const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=12&data=${encodeURIComponent(parentUrl)}`
+
+  const handlePrint = () => {
+    const win = window.open('', '_blank')
+    win.document.write(`
+      <html><head><title>학부모 상담 예약 QR코드</title>
+      <style>
+        body { font-family: sans-serif; text-align: center; padding: 40px; }
+        h2 { font-size: 22px; margin-bottom: 8px; }
+        p { color: #6b7280; font-size: 14px; margin-bottom: 20px; }
+        img { display: block; margin: 0 auto 16px; }
+        .url { font-size: 13px; color: #2563eb; word-break: break-all; }
+      </style></head>
+      <body>
+        <h2>📅 2학년 3반 학부모 상담 예약</h2>
+        <p>QR코드를 스캔하면 예약 페이지로 바로 이동합니다.</p>
+        <img src="${qrImgUrl}" width="220" height="220" />
+        <div class="url">${parentUrl}</div>
+        <script>window.onload = () => { window.print(); window.close() }<\/script>
+      </body></html>
+    `)
+    win.document.close()
+  }
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e5e7eb', padding: '18px 20px', marginTop: 20 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <div>
+          <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 2 }}>QR 코드 배포</h2>
+          <p style={{ fontSize: 12, color: '#6b7280' }}>학부모님께 QR코드를 공유하시면 바로 예약 페이지로 연결됩니다.</p>
+        </div>
+        <button
+          onClick={handlePrint}
+          style={{ padding: '8px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+        >
+          🖨️ 인쇄하기
+        </button>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
+        <img src={qrImgUrl} alt="QR코드" width={160} height={160} style={{ borderRadius: 8, border: '1px solid #e5e7eb' }} />
+        <div>
+          <p style={{ fontSize: 13, color: '#374151', marginBottom: 8 }}>📱 스캔하면 바로 예약 페이지로 이동</p>
+          <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#2563eb', wordBreak: 'break-all', maxWidth: 300 }}>
+            {parentUrl}
+          </div>
+          <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 8 }}>
+            인쇄 후 학급 안내문, 칠판, 알림장 등에 부착해 배포하세요.
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── 메인 AdminPage ─────────────────────────────────────────────
 export default function AdminPage() {
   const navigate = useNavigate()
@@ -644,6 +703,9 @@ export default function AdminPage() {
 
         {/* ── 학급 명단 ── */}
         <ClassRosterPanel roster={rosterWithStatus} reservedCount={reservedCount} />
+
+        {/* ── QR 코드 배포 ── */}
+        <QRSection />
 
       </main>
     </div>
