@@ -4,7 +4,7 @@ import {
   getAllSlots, getAllReservations, addSlot, deleteSlot,
   getSlotsByDate, getReservationsByDate,
   updateReservationStatus, deleteReservation,
-  getConfig, updateConfig,
+  getConfig, updateConfig, seedSlots,
 } from '../services/storageService'
 import ReservationList from '../components/ReservationList'
 import { AVAILABLE_DATES } from '../data/initialSlots'
@@ -427,6 +427,14 @@ export default function AdminPage() {
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <Link to="/" style={{ fontSize: 13, color: '#2563eb', textDecoration: 'none' }}>학부모 페이지</Link>
+          <button
+            onClick={async () => {
+              if (!window.confirm('누락된 기본 상담 슬롯을 복구합니다. 기존 슬롯은 변경되지 않습니다.')) return
+              try { await seedSlots(); await load(); alert('슬롯 복구 완료') }
+              catch (e) { alert('복구 실패: ' + e.message) }
+            }}
+            style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid #f59e0b', background: '#fffbeb', fontSize: 13, color: '#92400e', cursor: 'pointer' }}
+          >슬롯 복구</button>
           <button onClick={load} style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', fontSize: 13, color: '#374151', cursor: 'pointer' }}>새로고침</button>
           <button onClick={handleLogout} style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', fontSize: 13, color: '#6b7280', cursor: 'pointer' }}>로그아웃</button>
         </div>

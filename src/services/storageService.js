@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { INITIAL_SLOTS } from '../data/initialSlots'
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -123,6 +124,24 @@ export async function addSlot(slot) {
 
 export async function deleteSlot(slotId) {
   const { error } = await supabase.from('slots').delete().eq('id', slotId)
+  if (error) throw new Error(error.message)
+}
+
+export async function seedSlots() {
+  const rows = INITIAL_SLOTS.map(s => ({
+    id: s.id,
+    date: s.date,
+    day_label: s.dayLabel,
+    title: s.title,
+    start_time: s.startTime,
+    end_time: s.endTime,
+    location: s.location,
+    allowed_methods: s.allowedMethods,
+    max_reservations: s.maxReservations,
+    notice: s.notice ?? '',
+    is_special: s.isSpecial ?? false,
+  }))
+  const { error } = await supabase.from('slots').upsert(rows, { onConflict: 'id', ignoreDuplicates: true })
   if (error) throw new Error(error.message)
 }
 
