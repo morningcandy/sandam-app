@@ -83,7 +83,6 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
     setError('')
     try {
       await addReservation({
-        id: 'r' + Date.now(),
         slotId: slot.id,
         studentNumber: form.studentNumber,
         studentName: form.studentName,

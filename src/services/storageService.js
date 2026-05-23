@@ -168,6 +168,7 @@ export async function addReservation(reservation) {
   const { data, error } = await supabase
     .from('reservations')
     .insert({
+      id: crypto.randomUUID(),
       slot_id: reservation.slotId,
       student_number: reservation.studentNumber,
       student_name: reservation.studentName,
