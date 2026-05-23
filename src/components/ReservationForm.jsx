@@ -3,6 +3,7 @@ import { addReservation, getReservationsByStudentNumber } from '../services/stor
 import { CLASS_ROSTER } from '../data/classRoster'
 
 const ROSTER_MAP = Object.fromEntries(CLASS_ROSTER.map(s => [s.name, s.studentNumber]))
+const BIRTHDATE_MAP = Object.fromEntries(CLASS_ROSTER.map(s => [s.name, s.birthdate]))
 
 const RELATION_OPTIONS = ['모', '부', '부모 둘다', '기타']
 
@@ -34,6 +35,7 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
   const [form, setForm] = useState({
     studentName: '',
     studentNumber: '',
+    studentBirthdate: '',
     parentName: '',
     visitorRelation: '',
     visitorRelationCustom: '',
@@ -71,6 +73,11 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
     set('parentName', value.replace(/[0-9]/g, ''))
   }
 
+  // 생년월일 숫자만, 최대 6자리
+  const handleBirthdateChange = (value) => {
+    set('studentBirthdate', value.replace(/\D/g, '').slice(0, 6))
+  }
+
   // 010-XXXX-XXXX 자동 포맷: 중간 4번째 숫자 입력 시 자동으로 - 추가
   const handlePhoneChange = (raw) => {
     const isDeleting = raw.length < form.parentPhone.length
@@ -87,6 +94,14 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
   const handleSubmit = async () => {
     if (!ROSTER_MAP[form.studentName]) {
       setError('학급 명단에 없는 학생입니다. 이름을 정확히 입력해 주세요.')
+      return
+    }
+    if (!form.studentBirthdate || form.studentBirthdate.length < 6) {
+      setError('자녀의 생년월일 6자리를 입력해 주세요. (예: 090820)')
+      return
+    }
+    if (form.studentBirthdate !== BIRTHDATE_MAP[form.studentName]) {
+      setError('학생 이름과 생년월일이 일치하지 않습니다. 다시 확인해 주세요.')
       return
     }
     if (!form.parentName) {
@@ -211,6 +226,22 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
               {nameError && (
                 <p style={{ fontSize: 12, color: '#dc2626', marginTop: 4 }}>{nameError}</p>
               )}
+            </div>
+
+            {/* 생년월일 */}
+            <div style={{ marginBottom: 14 }}>
+              <label style={labelStyle}>자녀 생년월일 <span style={{ color: '#dc2626' }}>*</span></label>
+              <input
+                style={inputStyle}
+                placeholder="6자리 입력 (예: 090820)"
+                value={form.studentBirthdate}
+                onChange={e => handleBirthdateChange(e.target.value)}
+                inputMode="numeric"
+                maxLength={6}
+              />
+              <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>
+                학생 이름과 생년월일이 일치해야 예약할 수 있습니다.
+              </p>
             </div>
 
             {/* 학번 자동 입력 */}

@@ -227,6 +227,11 @@ function ClassRosterPanel({ roster, reservedCount }) {
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}>
                 {student.name}
+                {student.birthdate && (
+                  <span style={{ display: 'block', fontSize: 10, color: '#9ca3af', fontWeight: 400 }}>
+                    {student.birthdate}
+                  </span>
+                )}
               </span>
               <span style={{ color: hasInfo ? '#111827' : '#d1d5db', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {hasInfo ? student.parentName : '—'}
@@ -396,6 +401,7 @@ export default function AdminPage() {
     return {
       ...student,
       status,
+      birthdate: student.birthdate ?? '',
       parentName: mainRes?.parentName ?? '',
       visitorRelation: mainRes?.visitorRelation ?? '',
       parentPhone: mainRes?.parentPhone ?? '',
