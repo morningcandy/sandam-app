@@ -2,8 +2,9 @@ import React, { useState } from 'react'
 import { addReservation } from '../services/storageService'
 import { CLASS_ROSTER } from '../data/classRoster'
 
-// 이름 → 학번 빠른 조회용 맵
 const ROSTER_MAP = Object.fromEntries(CLASS_ROSTER.map(s => [s.name, s.studentNumber]))
+
+const RELATION_OPTIONS = ['모', '부', '부모 둘다', '기타']
 
 const overlay = {
   position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
@@ -32,9 +33,11 @@ const secondaryBtn = {
 export default function ReservationForm({ slot, onClose, onSuccess }) {
   const [form, setForm] = useState({
     studentName: '',
-    studentNumber: '',   // 명단 기준 자동 입력
+    studentNumber: '',
     parentName: '',
-    parentPhone: '',
+    visitorRelation: '',
+    visitorRelationCustom: '',
+    parentPhone: '010-',
     counselingContent: '',
     counselingMethod: (slot.allowedMethods ?? [])[0] ?? '',
     consent: false,
@@ -46,7 +49,6 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
-  // 학생 이름 입력 시 명단 검증 + 학번 자동 입력
   const handleNameChange = (name) => {
     set('studentName', name)
     if (!name) {
@@ -64,13 +66,44 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
     }
   }
 
+  // 숫자 입력 차단
+  const handleParentNameChange = (value) => {
+    set('parentName', value.replace(/[0-9]/g, ''))
+  }
+
+  // 010-XXXX-XXXX 자동 포맷
+  const handlePhoneChange = (raw) => {
+    const digits = raw.replace(/\D/g, '')
+    const d = ('010' + digits.replace(/^010/, '')).slice(0, 11)
+    let formatted = d.slice(0, 3)
+    if (d.length > 3) formatted += '-' + d.slice(3, 7)
+    if (d.length > 7) formatted += '-' + d.slice(7, 11)
+    if (d.length <= 3) formatted = '010-'
+    set('parentPhone', formatted)
+  }
+
   const handleSubmit = async () => {
-    // 명단 검증
     if (!ROSTER_MAP[form.studentName]) {
       setError('학급 명단에 없는 학생입니다. 이름을 정확히 입력해 주세요.')
       return
     }
-    if (!form.parentName || !form.parentPhone || !form.counselingContent || !form.counselingMethod) {
+    if (!form.parentName) {
+      setError('학부모 성함을 입력해 주세요.')
+      return
+    }
+    if (!form.visitorRelation) {
+      setError('방문자 관계를 선택해 주세요.')
+      return
+    }
+    if (form.visitorRelation === '기타' && !form.visitorRelationCustom.trim()) {
+      setError('방문자 관계를 직접 입력해 주세요.')
+      return
+    }
+    if (!form.parentPhone || form.parentPhone.length < 13) {
+      setError('학부모 연락처를 010-XXXX-XXXX 형식으로 입력해 주세요.')
+      return
+    }
+    if (!form.counselingContent || !form.counselingMethod) {
       setError('모든 항목을 입력해 주세요.')
       return
     }
@@ -78,6 +111,10 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
       setError('개인정보 수집 동의를 체크해 주세요.')
       return
     }
+
+    const finalRelation = form.visitorRelation === '기타'
+      ? form.visitorRelationCustom.trim()
+      : form.visitorRelation
 
     setLoading(true)
     setError('')
@@ -87,6 +124,7 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
         studentNumber: form.studentNumber,
         studentName: form.studentName,
         parentName: form.parentName,
+        visitorRelation: finalRelation,
         parentPhone: form.parentPhone,
         counselingContent: form.counselingContent,
         counselingMethod: form.counselingMethod,
@@ -101,6 +139,9 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
   }
 
   const fmtDate = slot.date.replace('2026-', '').replace('-', '월 ') + '일'
+  const displayRelation = form.visitorRelation === '기타'
+    ? form.visitorRelationCustom || '기타'
+    : form.visitorRelation
 
   return (
     <div style={overlay} onClick={e => e.target === e.currentTarget && onClose()}>
@@ -125,7 +166,7 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
                 <span style={{ color: '#6b7280' }}>학생</span>
                 <span>{form.studentName} ({form.studentNumber})</span>
                 <span style={{ color: '#6b7280' }}>학부모</span>
-                <span>{form.parentName}</span>
+                <span>{form.parentName} ({displayRelation})</span>
                 <span style={{ color: '#6b7280' }}>연락처</span>
                 <span>{form.parentPhone}</span>
                 <span style={{ color: '#6b7280' }}>방식</span>
@@ -147,7 +188,7 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
               {fmtDate} · {slot.title} ({slot.startTime}~{slot.endTime})
             </p>
 
-            {/* 학생 이름 — 명단 검증 */}
+            {/* 학생 이름 */}
             <div style={{ marginBottom: 14 }}>
               <label style={labelStyle}>학생 이름 <span style={{ color: '#dc2626' }}>*</span></label>
               <input
@@ -161,7 +202,7 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
               )}
             </div>
 
-            {/* 학번 — 자동 입력 (읽기 전용) */}
+            {/* 학번 자동 입력 */}
             <div style={{ marginBottom: 14 }}>
               <label style={labelStyle}>학번 (자동 입력)</label>
               <input
@@ -171,19 +212,60 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
               />
             </div>
 
+            {/* 학부모 성함 */}
             <div style={{ marginBottom: 14 }}>
               <label style={labelStyle}>학부모 성함 <span style={{ color: '#dc2626' }}>*</span></label>
-              <input style={inputStyle} placeholder="학부모 성함"
-                value={form.parentName} onChange={e => set('parentName', e.target.value)} />
+              <input
+                style={inputStyle}
+                placeholder="학부모 성함"
+                value={form.parentName}
+                onChange={e => handleParentNameChange(e.target.value)}
+              />
             </div>
+
+            {/* 방문자 관계 */}
+            <div style={{ marginBottom: 14 }}>
+              <label style={labelStyle}>방문자 관계 <span style={{ color: '#dc2626' }}>*</span></label>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 4 }}>
+                {RELATION_OPTIONS.map(opt => (
+                  <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="visitorRelation"
+                      value={opt}
+                      checked={form.visitorRelation === opt}
+                      onChange={() => set('visitorRelation', opt)}
+                    />
+                    {opt}
+                  </label>
+                ))}
+              </div>
+              {form.visitorRelation === '기타' && (
+                <input
+                  style={{ ...inputStyle, marginTop: 8 }}
+                  placeholder="관계를 직접 입력해 주세요"
+                  value={form.visitorRelationCustom}
+                  onChange={e => set('visitorRelationCustom', e.target.value)}
+                />
+              )}
+            </div>
+
+            {/* 학부모 연락처 */}
             <div style={{ marginBottom: 14 }}>
               <label style={labelStyle}>학부모 연락처 <span style={{ color: '#dc2626' }}>*</span></label>
-              <input style={inputStyle} placeholder="010-0000-0000"
-                value={form.parentPhone} onChange={e => set('parentPhone', e.target.value)} />
+              <input
+                style={inputStyle}
+                placeholder="010-0000-0000"
+                value={form.parentPhone}
+                onChange={e => handlePhoneChange(e.target.value)}
+                inputMode="numeric"
+              />
               <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>
                 예약 확인 시 입력한 번호가 필요합니다.
               </p>
             </div>
+
+            {/* 상담 희망 내용 */}
             <div style={{ marginBottom: 14 }}>
               <label style={labelStyle}>상담 희망 내용 <span style={{ color: '#dc2626' }}>*</span></label>
               <textarea
@@ -193,6 +275,8 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
                 onChange={e => set('counselingContent', e.target.value)}
               />
             </div>
+
+            {/* 상담 방식 */}
             <div style={{ marginBottom: 14 }}>
               <label style={labelStyle}>상담 방식</label>
               {(slot.allowedMethods ?? []).length === 1 ? (

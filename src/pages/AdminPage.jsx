@@ -82,7 +82,7 @@ function FilterPanel({ filter, reservations, onStatusChange, onDelete, onClose, 
               <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto 1fr', gap: '4px 12px', fontSize: 12, marginBottom: 10 }}>
                 <span style={{ color: '#9ca3af' }}>학번</span><span>{res.studentNumber}</span>
                 <span style={{ color: '#9ca3af' }}>학생</span><span style={{ fontWeight: 600 }}>{res.studentName}</span>
-                <span style={{ color: '#9ca3af' }}>학부모</span><span>{res.parentName}</span>
+                <span style={{ color: '#9ca3af' }}>학부모</span><span>{res.parentName}{res.visitorRelation ? ` (${res.visitorRelation})` : ''}</span>
                 <span style={{ color: '#9ca3af' }}>연락처</span><span>{res.parentPhone}</span>
                 <span style={{ color: '#9ca3af' }}>방식</span><span>{res.counselingMethod}</span>
                 <span style={{ color: '#9ca3af' }}>내용</span><span style={{ color: '#374151' }}>{res.counselingContent}</span>
@@ -222,6 +222,13 @@ function ClassRosterPanel({ roster, reservedCount }) {
                 color: applied && student.status !== '예약 취소 이력' ? '#111827' : '#374151',
               }}>
                 {student.name}
+                {(student.status === '예약 완료' || student.status === '상담 완료') && student.parentName && (
+                  <span style={{ display: 'block', fontSize: 11, color: '#6b7280', fontWeight: 400, marginTop: 2, lineHeight: 1.4 }}>
+                    {student.parentName}
+                    {student.visitorRelation ? ` (${student.visitorRelation})` : ''}
+                    {student.parentPhone ? ` · ${student.parentPhone}` : ''}
+                  </span>
+                )}
               </span>
               <div style={{ textAlign: 'center' }}>
                 <span style={{
@@ -374,11 +381,18 @@ export default function AdminPage() {
     const active = reses.find(r => r.status === '예약 완료')
     const done = reses.find(r => r.status === '상담 완료')
     const cancelled = reses.find(r => r.status === '예약 취소')
+    const mainRes = active || done || null
     let status = null
     if (active) status = '예약 완료'
     else if (done) status = '상담 완료'
     else if (cancelled) status = '예약 취소 이력'
-    return { ...student, status }
+    return {
+      ...student,
+      status,
+      parentName: mainRes?.parentName ?? '',
+      visitorRelation: mainRes?.visitorRelation ?? '',
+      parentPhone: mainRes?.parentPhone ?? '',
+    }
   })
   const reservedCount = rosterWithStatus.filter(s => s.status === '예약 완료' || s.status === '상담 완료').length
 
