@@ -190,14 +190,17 @@ function ClassRosterPanel({ roster, reservedCount }) {
 
       {/* 테이블 헤더 */}
       <div style={{
-        display: 'grid', gridTemplateColumns: '44px 70px 1fr 90px',
+        display: 'grid', gridTemplateColumns: '36px 62px 72px 72px 52px 1fr 80px',
         background: '#f8fafc', borderRadius: '8px 8px 0 0', border: '1px solid #e5e7eb',
-        padding: '8px 14px', fontSize: 12, fontWeight: 700, color: '#6b7280', marginBottom: 0,
+        padding: '8px 12px', fontSize: 11, fontWeight: 700, color: '#6b7280',
       }}>
         <span>번호</span>
         <span>학번</span>
         <span>이름</span>
-        <span style={{ textAlign: 'center' }}>상담 현황</span>
+        <span>학부모</span>
+        <span>관계</span>
+        <span>연락처</span>
+        <span style={{ textAlign: 'center' }}>현황</span>
       </div>
 
       {/* 학생 행 */}
@@ -205,34 +208,38 @@ function ClassRosterPanel({ roster, reservedCount }) {
         {roster.map((student, idx) => {
           const ss = getStatusStyle(student.status)
           const applied = student.status !== null
+          const hasInfo = (student.status === '예약 완료' || student.status === '상담 완료') && student.parentName
           return (
             <div
               key={student.no}
               style={{
-                display: 'grid', gridTemplateColumns: '44px 70px 1fr 90px',
-                padding: '9px 14px', fontSize: 13, alignItems: 'center',
+                display: 'grid', gridTemplateColumns: '36px 62px 72px 72px 52px 1fr 80px',
+                padding: '8px 12px', fontSize: 12, alignItems: 'center',
                 background: applied && student.status !== '예약 취소 이력' ? '#fafeff' : '#fff',
                 borderTop: idx > 0 ? '1px solid #f3f4f6' : 'none',
               }}
             >
-              <span style={{ color: '#9ca3af', fontSize: 12 }}>{student.no}</span>
-              <span style={{ color: '#6b7280', fontSize: 12, fontFamily: 'monospace' }}>{student.studentNumber}</span>
+              <span style={{ color: '#9ca3af', fontSize: 11 }}>{student.no}</span>
+              <span style={{ color: '#6b7280', fontSize: 11, fontFamily: 'monospace' }}>{student.studentNumber}</span>
               <span style={{
                 fontWeight: applied && student.status !== '예약 취소 이력' ? 700 : 400,
                 color: applied && student.status !== '예약 취소 이력' ? '#111827' : '#374151',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}>
                 {student.name}
-                {(student.status === '예약 완료' || student.status === '상담 완료') && student.parentName && (
-                  <span style={{ display: 'block', fontSize: 11, color: '#6b7280', fontWeight: 400, marginTop: 2, lineHeight: 1.4 }}>
-                    {student.parentName}
-                    {student.visitorRelation ? ` (${student.visitorRelation})` : ''}
-                    {student.parentPhone ? ` · ${student.parentPhone}` : ''}
-                  </span>
-                )}
+              </span>
+              <span style={{ color: hasInfo ? '#111827' : '#d1d5db', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {hasInfo ? student.parentName : '—'}
+              </span>
+              <span style={{ color: hasInfo ? '#374151' : '#d1d5db', fontSize: 12 }}>
+                {hasInfo ? (student.visitorRelation || '—') : '—'}
+              </span>
+              <span style={{ color: hasInfo ? '#374151' : '#d1d5db', fontSize: 12, fontFamily: 'monospace' }}>
+                {hasInfo ? student.parentPhone : '—'}
               </span>
               <div style={{ textAlign: 'center' }}>
                 <span style={{
-                  fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 12,
+                  fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 12,
                   ...ss,
                 }}>
                   {getStatusLabel(student.status)}

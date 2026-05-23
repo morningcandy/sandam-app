@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { addReservation } from '../services/storageService'
+import { addReservation, getReservationsByStudentNumber } from '../services/storageService'
 import { CLASS_ROSTER } from '../data/classRoster'
 
 const ROSTER_MAP = Object.fromEntries(CLASS_ROSTER.map(s => [s.name, s.studentNumber]))
@@ -46,6 +46,7 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [consentError, setConsentError] = useState(false)
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
@@ -66,18 +67,19 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
     }
   }
 
-  // 숫자 입력 차단
   const handleParentNameChange = (value) => {
     set('parentName', value.replace(/[0-9]/g, ''))
   }
 
-  // 010-XXXX-XXXX 자동 포맷
+  // 010-XXXX-XXXX 자동 포맷: 중간 4번째 숫자 입력 시 자동으로 - 추가
   const handlePhoneChange = (raw) => {
+    const isDeleting = raw.length < form.parentPhone.length
     const digits = raw.replace(/\D/g, '')
     const d = ('010' + digits.replace(/^010/, '')).slice(0, 11)
     let formatted = d.slice(0, 3)
     if (d.length > 3) formatted += '-' + d.slice(3, 7)
     if (d.length > 7) formatted += '-' + d.slice(7, 11)
+    else if (d.length === 7 && !isDeleting) formatted += '-'
     if (d.length <= 3) formatted = '010-'
     set('parentPhone', formatted)
   }
@@ -108,17 +110,26 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
       return
     }
     if (!form.consent) {
+      setConsentError(true)
       setError('개인정보 수집 동의를 체크해 주세요.')
       return
     }
 
-    const finalRelation = form.visitorRelation === '기타'
-      ? form.visitorRelationCustom.trim()
-      : form.visitorRelation
-
     setLoading(true)
     setError('')
     try {
+      // 중복 예약 확인
+      const existing = await getReservationsByStudentNumber(form.studentNumber)
+      const activeRes = existing.find(r => r.status !== '예약 취소')
+      if (activeRes) {
+        setError('이미 상담 예약이 완료된 학생입니다. 중복 신청은 불가합니다.')
+        return
+      }
+
+      const finalRelation = form.visitorRelation === '기타'
+        ? form.visitorRelationCustom.trim()
+        : form.visitorRelation
+
       await addReservation({
         slotId: slot.id,
         studentNumber: form.studentNumber,
@@ -295,10 +306,27 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
               )}
             </div>
 
-            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: '#6b7280', margin: '12px 0 16px' }}>
-              <input type="checkbox" checked={form.consent}
-                onChange={e => set('consent', e.target.checked)}
-                style={{ marginTop: 2, flexShrink: 0 }} />
+            {/* 개인정보 동의 - 미동의 시 붉은 테두리 */}
+            <label style={{
+              display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13,
+              color: consentError ? '#dc2626' : '#6b7280',
+              margin: '12px 0 16px',
+              background: consentError ? '#fef2f2' : 'transparent',
+              border: consentError ? '2px solid #fca5a5' : '2px solid transparent',
+              borderRadius: 8,
+              padding: '8px 10px',
+              transition: 'all 0.2s',
+              cursor: 'pointer',
+            }}>
+              <input
+                type="checkbox"
+                checked={form.consent}
+                onChange={e => {
+                  set('consent', e.target.checked)
+                  if (e.target.checked) setConsentError(false)
+                }}
+                style={{ marginTop: 2, flexShrink: 0 }}
+              />
               상담 예약을 위해 입력한 개인정보 수집 및 이용에 동의합니다.
             </label>
 
