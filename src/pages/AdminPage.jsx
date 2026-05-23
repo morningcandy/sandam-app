@@ -268,9 +268,12 @@ export default function AdminPage() {
   const [allReservations, setAllReservations] = useState([])
   const [loading, setLoading] = useState(false)
   const [actionLoadingId, setActionLoadingId] = useState(null)
-  const [openAt, setOpenAt] = useState('')        // 현재 저장된 오픈 시간
-  const [openAtInput, setOpenAtInput] = useState('') // 입력 중인 값
+  const [openAt, setOpenAt] = useState('')
+  const [openAtInput, setOpenAtInput] = useState('')
   const [openAtSaving, setOpenAtSaving] = useState(false)
+  const [closeAt, setCloseAt] = useState('')
+  const [closeAtInput, setCloseAtInput] = useState('')
+  const [closeAtSaving, setCloseAtSaving] = useState(false)
   const [showAddForm, setShowAddForm] = useState(false)
   const [newSlot, setNewSlot] = useState({
     date: AVAILABLE_DATES[0], title: '', startTime: '', endTime: '',
@@ -289,15 +292,11 @@ export default function AdminPage() {
       setSlots(Array.isArray(s) ? s : [])
       setReservations(Array.isArray(r) ? r : [])
       setAllReservations(Array.isArray(all) ? all : [])
-      // Supabase에서 UTC로 오는 값을 KST(+9시간)로 변환해서 입력창에 표시
-      const saved = cfg?.openAt
-        ? (() => {
-            const d = new Date(cfg.openAt)
-            return new Date(d.getTime() + 9 * 3600 * 1000).toISOString().slice(0, 16)
-          })()
-        : ''
-      setOpenAt(saved)
-      setOpenAtInput(saved)
+      const toKST = (v) => v ? (() => { const d = new Date(v); return new Date(d.getTime() + 9 * 3600 * 1000).toISOString().slice(0, 16) })() : ''
+      const savedOpen = toKST(cfg?.openAt)
+      const savedClose = toKST(cfg?.closeAt)
+      setOpenAt(savedOpen); setOpenAtInput(savedOpen)
+      setCloseAt(savedClose); setCloseAtInput(savedClose)
     } catch (e) {
       console.error(e)
     } finally {
@@ -341,16 +340,23 @@ export default function AdminPage() {
   const handleSaveOpenAt = async () => {
     setOpenAtSaving(true)
     try {
-      // KST 시간으로 입력된 값에 +09:00 붙여서 UTC로 올바르게 저장
       const saveValue = openAtInput ? openAtInput + ':00+09:00' : null
       await updateConfig({ openAt: saveValue })
       setOpenAt(openAtInput)
       alert(openAtInput ? `오픈 시간이 저장되었습니다.\n${fmtOpenAt(openAtInput)}` : '예약 오픈 시간 제한이 해제되었습니다.')
-    } catch (e) {
-      alert('저장 실패: ' + e.message)
-    } finally {
-      setOpenAtSaving(false)
-    }
+    } catch (e) { alert('저장 실패: ' + e.message) }
+    finally { setOpenAtSaving(false) }
+  }
+
+  const handleSaveCloseAt = async () => {
+    setCloseAtSaving(true)
+    try {
+      const saveValue = closeAtInput ? closeAtInput + ':00+09:00' : null
+      await updateConfig({ closeAt: saveValue })
+      setCloseAt(closeAtInput)
+      alert(closeAtInput ? `마감 시간이 저장되었습니다.\n${fmtOpenAt(closeAtInput)}` : '예약 마감 시간 제한이 해제되었습니다.')
+    } catch (e) { alert('저장 실패: ' + e.message) }
+    finally { setCloseAtSaving(false) }
   }
 
   const handleDeleteSlot = async (slotId) => {
@@ -448,58 +454,56 @@ export default function AdminPage() {
 
       <main style={{ maxWidth: 900, margin: '0 auto', padding: '1.5rem 1rem' }}>
 
-        {/* ── 예약 오픈 시간 설정 ── */}
+        {/* ── 예약 오픈/마감 시간 설정 ── */}
         <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e5e7eb', padding: '16px 18px', marginBottom: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
-            <div>
-              <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 2 }}>예약 오픈 시간 설정</h2>
-              <p style={{ fontSize: 12, color: '#6b7280' }}>
-                설정한 날짜·시간 이전에는 학부모 페이지에서 예약 신청이 차단됩니다.
-              </p>
+          <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 2 }}>예약 기간 설정</h2>
+          <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 14 }}>오픈 시간 이전에는 슬롯이 보이되 "오픈 예정"으로 표시되고, 마감 시간 이후에는 예약이 차단됩니다.</p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {/* 오픈 시간 */}
+            <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 10, padding: '12px 14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: 6 }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#0369a1' }}>🟢 예약 오픈 시간</span>
+                {openAt
+                  ? <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, background: '#eff6ff', color: '#1d4ed8', border: '1px solid #93c5fd' }}>설정됨: {fmtOpenAt(openAt)}</span>
+                  : <span style={{ fontSize: 11, padding: '2px 10px', borderRadius: 20, background: '#f0fdf4', color: '#059669', border: '1px solid #6ee7b7' }}>제한 없음 (즉시 오픈)</span>
+                }
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                <input type="datetime-local" value={openAtInput} onChange={e => setOpenAtInput(e.target.value)}
+                  style={{ padding: '7px 10px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 13, outline: 'none', color: '#111827' }} />
+                <button onClick={handleSaveOpenAt} disabled={openAtSaving || openAtInput === openAt}
+                  style={{ padding: '7px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: (openAtSaving || openAtInput === openAt) ? 0.5 : 1 }}>
+                  {openAtSaving ? '저장 중...' : '저장'}
+                </button>
+                {openAtInput && <button onClick={() => setOpenAtInput('')}
+                  style={{ padding: '7px 12px', background: '#fff', color: '#6b7280', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}>해제</button>}
+              </div>
+              {openAtInput && openAtInput !== openAt && <p style={{ fontSize: 11, color: '#f59e0b', marginTop: 6 }}>⚠ 저장 버튼을 눌러야 적용됩니다.</p>}
             </div>
-            {openAt && (
-              <span style={{ fontSize: 12, fontWeight: 700, padding: '4px 12px', borderRadius: 20, background: '#eff6ff', color: '#1d4ed8', border: '1px solid #93c5fd' }}>
-                현재 설정: {fmtOpenAt(openAt)}
-              </span>
-            )}
-            {!openAt && (
-              <span style={{ fontSize: 12, padding: '4px 12px', borderRadius: 20, background: '#f0fdf4', color: '#059669', border: '1px solid #6ee7b7' }}>
-                제한 없음 (즉시 오픈)
-              </span>
-            )}
+
+            {/* 마감 시간 */}
+            <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '12px 14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: 6 }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#c2410c' }}>🔴 예약 마감 시간</span>
+                {closeAt
+                  ? <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, background: '#fff7ed', color: '#c2410c', border: '1px solid #fed7aa' }}>설정됨: {fmtOpenAt(closeAt)}</span>
+                  : <span style={{ fontSize: 11, padding: '2px 10px', borderRadius: 20, background: '#f9fafb', color: '#9ca3af', border: '1px solid #e5e7eb' }}>마감 없음</span>
+                }
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                <input type="datetime-local" value={closeAtInput} onChange={e => setCloseAtInput(e.target.value)}
+                  style={{ padding: '7px 10px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 13, outline: 'none', color: '#111827' }} />
+                <button onClick={handleSaveCloseAt} disabled={closeAtSaving || closeAtInput === closeAt}
+                  style={{ padding: '7px 16px', background: '#ea580c', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: (closeAtSaving || closeAtInput === closeAt) ? 0.5 : 1 }}>
+                  {closeAtSaving ? '저장 중...' : '저장'}
+                </button>
+                {closeAtInput && <button onClick={() => setCloseAtInput('')}
+                  style={{ padding: '7px 12px', background: '#fff', color: '#6b7280', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}>해제</button>}
+              </div>
+              {closeAtInput && closeAtInput !== closeAt && <p style={{ fontSize: 11, color: '#f59e0b', marginTop: 6 }}>⚠ 저장 버튼을 눌러야 적용됩니다.</p>}
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <input
-              type="datetime-local"
-              value={openAtInput}
-              onChange={e => setOpenAtInput(e.target.value)}
-              style={{ padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 13, outline: 'none', color: '#111827' }}
-            />
-            <button
-              onClick={handleSaveOpenAt}
-              disabled={openAtSaving || openAtInput === openAt}
-              style={{
-                padding: '8px 18px', background: '#2563eb', color: '#fff', border: 'none',
-                borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                opacity: (openAtSaving || openAtInput === openAt) ? 0.5 : 1,
-              }}
-            >
-              {openAtSaving ? '저장 중...' : '저장'}
-            </button>
-            {openAtInput && (
-              <button
-                onClick={() => setOpenAtInput('')}
-                style={{ padding: '8px 14px', background: '#fff', color: '#6b7280', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}
-              >
-                제한 해제
-              </button>
-            )}
-          </div>
-          {openAtInput && openAtInput !== openAt && (
-            <p style={{ fontSize: 12, color: '#f59e0b', marginTop: 8 }}>
-              ⚠ 저장 버튼을 눌러야 적용됩니다.
-            </p>
-          )}
         </div>
 
         {/* ── 통계 카드 (클릭 가능) ── */}

@@ -19,7 +19,8 @@ export default function ParentReservationPage() {
   const [slots, setSlots] = useState([])
   const [slotsLoading, setSlotsLoading] = useState(false)
   const [reservingSlot, setReservingSlot] = useState(null)
-  const [openAt, setOpenAt] = useState(null)   // null = 제한 없음
+  const [openAt, setOpenAt] = useState(null)
+  const [closeAt, setCloseAt] = useState(null)
   const [configLoaded, setConfigLoaded] = useState(false)
 
   // 내 예약 조회
@@ -33,6 +34,7 @@ export default function ParentReservationPage() {
   useEffect(() => {
     getConfig().then(cfg => {
       setOpenAt(cfg.openAt || null)
+      setCloseAt(cfg.closeAt || null)
       setConfigLoaded(true)
     }).catch(() => setConfigLoaded(true))
   }, [])
@@ -73,7 +75,10 @@ export default function ParentReservationPage() {
     }
   }
 
-  const isReservationOpen = !openAt || new Date() >= new Date(openAt)
+  const now = new Date()
+  const isBeforeOpen = !!openAt && now < new Date(openAt)
+  const isAfterClose = !!closeAt && now > new Date(closeAt)
+  const isReservationOpen = !isBeforeOpen && !isAfterClose
   // Supabase에서 오는 UTC ISO 문자열을 KST(+9)로 변환해서 표시
   const fmtOpenAt = (dt) => {
     if (!dt) return ''
@@ -168,24 +173,32 @@ export default function ParentReservationPage() {
           </div>
         )}
 
-        {tab === 'calendar' && configLoaded && !isReservationOpen && (
-          <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e5e7eb', padding: '3rem 1.5rem', textAlign: 'center' }}>
-            <div style={{ fontSize: 52, marginBottom: 16 }}>🔒</div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111827', marginBottom: 8 }}>
-              아직 예약 신청 기간이 아닙니다
-            </h2>
-            <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 16, lineHeight: 1.7 }}>
-              상담 예약 신청은<br />
-              <strong style={{ color: '#2563eb', fontSize: 16 }}>{fmtOpenAt(openAt)}</strong>부터 가능합니다.
-            </p>
-            <div style={{ display: 'inline-block', background: '#eff6ff', border: '1px solid #93c5fd', borderRadius: 10, padding: '10px 20px', fontSize: 13, color: '#1d4ed8' }}>
-              오픈 시간 이후 이 페이지를 새로고침 해주세요.
-            </div>
-          </div>
-        )}
-
-        {tab === 'calendar' && configLoaded && isReservationOpen && (
+        {tab === 'calendar' && configLoaded && (
           <>
+            {/* 오픈 예정 배너 */}
+            {isBeforeOpen && (
+              <div style={{ background: '#f5f3ff', border: '1px solid #c4b5fd', borderRadius: 12, padding: '12px 16px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 20 }}>🔒</span>
+                <div>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: '#5b21b6', marginBottom: 2 }}>예약 신청 오픈 전입니다</p>
+                  <p style={{ fontSize: 12, color: '#7c3aed' }}>
+                    <strong>{fmtOpenAt(openAt)}</strong>부터 예약하실 수 있습니다. 오픈 후 이 페이지를 새로고침 해주세요.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* 마감 배너 */}
+            {isAfterClose && (
+              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 12, padding: '12px 16px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 20 }}>🔴</span>
+                <div>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: '#dc2626', marginBottom: 2 }}>예약 신청이 마감되었습니다</p>
+                  <p style={{ fontSize: 12, color: '#ef4444' }}>상담 예약 신청 기간이 종료되었습니다.</p>
+                </div>
+              </div>
+            )}
+
             {/* 캘린더 */}
             <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e5e7eb', padding: '1.25rem', marginBottom: '1.25rem' }}>
               <div style={{ textAlign: 'center', marginBottom: 16 }}>
@@ -272,7 +285,7 @@ export default function ParentReservationPage() {
                   ) : (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
                       {slots.map(slot => (
-                        <SlotCard key={slot.id} slot={slot} onReserve={setReservingSlot} />
+                        <SlotCard key={slot.id} slot={slot} onReserve={setReservingSlot} isBeforeOpen={isBeforeOpen} isAfterClose={isAfterClose} />
                       ))}
                     </div>
                   )}

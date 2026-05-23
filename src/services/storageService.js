@@ -68,15 +68,18 @@ export async function getConfig() {
     .eq('id', 1)
     .single()
   if (error && error.code !== 'PGRST116') throw new Error(error.message)
-  return { openAt: data?.open_at ?? null }
+  return {
+    openAt: data?.open_at ?? null,
+    closeAt: data?.close_at ?? null,
+  }
 }
 
-export async function updateConfig({ openAt }) {
-  const { error } = await supabase
-    .from('config')
-    .upsert({ id: 1, open_at: openAt ?? null })
+export async function updateConfig({ openAt, closeAt }) {
+  const updates = { id: 1 }
+  if (openAt !== undefined) updates.open_at = openAt ?? null
+  if (closeAt !== undefined) updates.close_at = closeAt ?? null
+  const { error } = await supabase.from('config').upsert(updates)
   if (error) throw new Error(error.message)
-  return { openAt: openAt ?? null }
 }
 
 // ── 슬롯 ─────────────────────────────────────────────────────
