@@ -59,14 +59,6 @@ export const INITIAL_SLOTS = [
   { id: 's0609-6A', date: '2026-06-09', dayLabel: '화요일', title: '6교시 전반부', startTime: '14:10', endTime: '14:35', location: '2교무실', allowedMethods: ['대면', '전화'], maxReservations: 1, notice: '', isSpecial: false },
   { id: 's0609-6B', date: '2026-06-09', dayLabel: '화요일', title: '6교시 후반부', startTime: '14:35', endTime: '15:00', location: '2교무실', allowedMethods: ['대면', '전화'], maxReservations: 1, notice: '', isSpecial: false },
 
-  // ── 6월 10일 (수) ─────────────────────────────────────────
-  // 수업: 3·5·6·7교시 / 상담가능: 1·2·4교시
-  { id: 's0610-1A', date: '2026-06-10', dayLabel: '수요일', title: '1교시 전반부', startTime: '08:20', endTime: '08:45', location: '2교무실', allowedMethods: ['대면', '전화'], maxReservations: 1, notice: '', isSpecial: false },
-  { id: 's0610-1B', date: '2026-06-10', dayLabel: '수요일', title: '1교시 후반부', startTime: '08:45', endTime: '09:10', location: '2교무실', allowedMethods: ['대면', '전화'], maxReservations: 1, notice: '', isSpecial: false },
-  { id: 's0610-2A', date: '2026-06-10', dayLabel: '수요일', title: '2교시 전반부', startTime: '09:20', endTime: '09:45', location: '2교무실', allowedMethods: ['대면', '전화'], maxReservations: 1, notice: '', isSpecial: false },
-  { id: 's0610-2B', date: '2026-06-10', dayLabel: '수요일', title: '2교시 후반부', startTime: '09:45', endTime: '10:10', location: '2교무실', allowedMethods: ['대면', '전화'], maxReservations: 1, notice: '', isSpecial: false },
-  { id: 's0610-4A', date: '2026-06-10', dayLabel: '수요일', title: '4교시 전반부', startTime: '12:10', endTime: '12:35', location: '2교무실', allowedMethods: ['대면', '전화'], maxReservations: 1, notice: '', isSpecial: false },
-  { id: 's0610-4B', date: '2026-06-10', dayLabel: '수요일', title: '4교시 후반부', startTime: '12:35', endTime: '13:00', location: '2교무실', allowedMethods: ['대면', '전화'], maxReservations: 1, notice: '', isSpecial: false },
 ]
 
 // 상담 불가일 (안내 문구 포함)
@@ -90,5 +82,5 @@ export const ALL_JUNE_DATES = Array.from({ length: 30 }, (_, i) => {
 // 예약 가능한 날짜 목록
 export const AVAILABLE_DATES = [
   '2026-06-01', '2026-06-02', '2026-06-04', '2026-06-05',
-  '2026-06-08', '2026-06-09', '2026-06-10',
+  '2026-06-08', '2026-06-09',
 ]
