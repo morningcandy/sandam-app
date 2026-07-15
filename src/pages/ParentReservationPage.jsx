@@ -8,7 +8,7 @@ const DOW = ['일', '월', '화', '수', '목', '금', '토']
 const JUNE_FIRST_DOW = new Date(2026, 5, 1).getDay()
 
 const STATUS_STYLE = {
-  '예약 완료': { background: '#dbeafe', color: '#1e40af' },
+  '예약 완료': { background: '#fbcfe8', color: '#9d174d' },
   '상담 완료': { background: '#d1fae5', color: '#065f46' },
   '예약 취소': { background: '#fee2e2', color: '#991b1b' },
 }
@@ -111,7 +111,7 @@ export default function ParentReservationPage() {
     }
     if (type === 'holiday') return { ...base, background: '#fef2f2', border: '1px solid #fecaca' }
     if (type === 'special') return { ...base, cursor: 'pointer', background: isSelected ? '#ede9fe' : '#f5f3ff', border: isSelected ? '2px solid #7c3aed' : '1px solid #c4b5fd' }
-    if (type === 'available') return { ...base, cursor: 'pointer', background: isSelected ? '#dbeafe' : '#eff6ff', border: isSelected ? '2px solid #2563eb' : '1px solid #93c5fd' }
+    if (type === 'available') return { ...base, cursor: 'pointer', background: isSelected ? '#fbcfe8' : '#fdf2f8', border: isSelected ? '2px solid #db2777' : '1px solid #f9a8d4' }
     return { ...base, background: '#f9fafb', border: '1px solid #f3f4f6' }
   }
 
@@ -123,7 +123,7 @@ export default function ParentReservationPage() {
       </header>
 
       {/* 담임 소개 배너 */}
-      <div style={{ background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)', borderBottom: '1px solid #e5e7eb', padding: '14px 24px' }}>
+      <div style={{ background: 'linear-gradient(135deg, #fdf2f8 0%, #fff0f6 100%)', borderBottom: '1px solid #e5e7eb', padding: '14px 24px' }}>
         <div style={{ maxWidth: 760, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
           <img
             src="/teacher.png"
@@ -133,7 +133,7 @@ export default function ParentReservationPage() {
           <div style={{ flex: 1, minWidth: 220 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
               <span style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>2-3 담임 이서연 선생님</span>
-              <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 20, background: '#dbeafe', color: '#1e40af', fontWeight: 600 }}>대면 · 전화 상담</span>
+              <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 20, background: '#fbcfe8', color: '#9d174d', fontWeight: 600 }}>대면 · 전화 상담</span>
             </div>
             <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13, color: '#4b5563' }}>
               <span>📞 010-9551-0903</span>
@@ -155,8 +155,8 @@ export default function ParentReservationPage() {
             style={{
               padding: '13px 28px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
               border: 'none', background: 'none',
-              color: tab === t.key ? '#2563eb' : '#9ca3af',
-              borderBottom: tab === t.key ? '2px solid #2563eb' : '2px solid transparent',
+              color: tab === t.key ? '#db2777' : '#9ca3af',
+              borderBottom: tab === t.key ? '2px solid #db2777' : '2px solid transparent',
             }}
           >
             {t.label}
@@ -227,11 +227,11 @@ export default function ParentReservationPage() {
                       <span style={{
                         fontSize: 14, fontWeight: 600,
                         color: type === 'holiday' ? '#dc2626' : type === 'special' ? '#5b21b6'
-                          : type === 'available' ? '#1d4ed8' : dow === 0 ? '#dc2626' : dow === 6 ? '#2563eb' : '#6b7280',
+                          : type === 'available' ? '#be185d' : dow === 0 ? '#dc2626' : dow === 6 ? '#2563eb' : '#6b7280',
                       }}>
                         {day}
                       </span>
-                      {type === 'available' && <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#2563eb', opacity: 0.7 }} />}
+                      {type === 'available' && <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#db2777', opacity: 0.7 }} />}
                       {type === 'special' && <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#7c3aed', opacity: 0.7 }} />}
                     </div>
                   )
@@ -240,7 +240,7 @@ export default function ParentReservationPage() {
 
               <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 16, paddingTop: 14, borderTop: '1px solid #f3f4f6', justifyContent: 'center' }}>
                 {[
-                  { color: '#eff6ff', border: '#93c5fd', label: '예약 가능' },
+                  { color: '#fdf2f8', border: '#f9a8d4', label: '예약 가능' },
                   { color: '#f5f3ff', border: '#c4b5fd', label: '학력평가일 (전화 중심)' },
                   { color: '#fef2f2', border: '#fecaca', label: '상담 불가' },
                 ].map(item => (
@@ -274,7 +274,7 @@ export default function ParentReservationPage() {
                     {fmtDateKo(selectedDate)} ({DOW[new Date(selectedDate).getDay()]}요일) 상담 시간
                   </h2>
                   {SPECIAL_DAY_NOTICE[selectedDate] && (
-                    <div style={{ background: '#eff6ff', border: '1px solid #93c5fd', borderRadius: 10, padding: '12px 14px', fontSize: 13, color: '#1e40af', marginBottom: 14, lineHeight: 1.6 }}>
+                    <div style={{ background: '#fdf2f8', border: '1px solid #f9a8d4', borderRadius: 10, padding: '12px 14px', fontSize: 13, color: '#9d174d', marginBottom: 14, lineHeight: 1.6 }}>
                       {SPECIAL_DAY_NOTICE[selectedDate]}
                     </div>
                   )}
@@ -320,7 +320,7 @@ export default function ParentReservationPage() {
                 <button
                   onClick={handleLookup}
                   disabled={lookupLoading || !lookupName.trim() || !lookupPhone.trim()}
-                  style={{ padding: '10px 20px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer', opacity: (lookupLoading || !lookupName.trim() || !lookupPhone.trim()) ? 0.5 : 1 }}
+                  style={{ padding: '10px 20px', background: '#db2777', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer', opacity: (lookupLoading || !lookupName.trim() || !lookupPhone.trim()) ? 0.5 : 1 }}
                 >
                   {lookupLoading ? '조회 중...' : '조회'}
                 </button>

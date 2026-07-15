@@ -323,6 +323,7 @@ export default function AdminPage() {
   const [activeFilter, setActiveFilter] = useState(null) // null | '예약 완료' | '상담 완료' | '예약 취소'
   const [selectedDate, setSelectedDate] = useState(AVAILABLE_DATES[0])
   const [slots, setSlots] = useState([])
+  const [allSlots, setAllSlots] = useState([])
   const [reservations, setReservations] = useState([])
   const [allReservations, setAllReservations] = useState([])
   const [loading, setLoading] = useState(false)
@@ -342,15 +343,17 @@ export default function AdminPage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [s, r, all, cfg] = await Promise.all([
+      const [s, r, all, cfg, allS] = await Promise.all([
         getSlotsByDate(selectedDate),
         getReservationsByDate(selectedDate),
         getAllReservations(),
         getConfig(),
+        getAllSlots(),
       ])
       setSlots(Array.isArray(s) ? s : [])
       setReservations(Array.isArray(r) ? r : [])
       setAllReservations(Array.isArray(all) ? all : [])
+      setAllSlots(Array.isArray(allS) ? allS : [])
       const toKST = (v) => v ? (() => { const d = new Date(v); return new Date(d.getTime() + 9 * 3600 * 1000).toISOString().slice(0, 16) })() : ''
       const savedOpen = toKST(cfg?.openAt)
       const savedClose = toKST(cfg?.closeAt)
@@ -698,7 +701,7 @@ export default function AdminPage() {
             <h2 style={{ fontSize: 15, fontWeight: 700 }}>{fmtDate(selectedDate)} 예약자 상세</h2>
             <span style={{ fontSize: 12, color: '#9ca3af' }}>예약 취소 건은 상단 빨간 카드에서 확인</span>
           </div>
-          <ReservationList slots={slots} reservations={reservations} onRefresh={load} />
+          <ReservationList slots={slots} reservations={reservations} allSlots={allSlots} onRefresh={load} />
         </div>
 
         {/* ── 학급 명단 ── */}

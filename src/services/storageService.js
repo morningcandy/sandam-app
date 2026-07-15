@@ -228,6 +228,14 @@ export async function updateReservationStatus(reservationId, newStatus) {
   if (error) throw new Error(error.message)
 }
 
+export async function updateReservationSlot(reservationId, newSlotId) {
+  const { error } = await supabase
+    .from('reservations')
+    .update({ slot_id: newSlotId })
+    .eq('id', reservationId)
+  if (error) throw new Error(error.message)
+}
+
 export async function deleteReservation(reservationId) {
   const { error } = await supabase
     .from('reservations')

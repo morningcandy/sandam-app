@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { updateReservationStatus } from '../services/storageService'
+import { updateReservationStatus, updateReservationSlot, deleteReservation, getSlotAvailability } from '../services/storageService'
 
 const STATUS_BADGE = {
   '예약 완료': { background: '#dbeafe', color: '#1e40af', border: '#93c5fd' },
@@ -7,9 +7,13 @@ const STATUS_BADGE = {
   '예약 취소': { background: '#fee2e2', color: '#991b1b', border: '#fca5a5' },
 }
 
+const fmtSlotDate = (d) => d ? d.replace('2026-', '').replace('-', '월 ') + '일' : ''
+
 // 기본 뷰: 예약 취소된 건은 표시하지 않음 (관리자 필터 패널에서 별도 관리)
-export default function ReservationList({ slots, reservations, onRefresh }) {
+export default function ReservationList({ slots, reservations, allSlots = [], onRefresh }) {
   const [loadingId, setLoadingId] = useState(null)
+  const [changingId, setChangingId] = useState(null)
+  const [targetSlotId, setTargetSlotId] = useState('')
 
   const handleStatus = async (id, newStatus, confirmMsg) => {
     if (confirmMsg && !window.confirm(confirmMsg)) return
@@ -19,6 +23,46 @@ export default function ReservationList({ slots, reservations, onRefresh }) {
       await onRefresh()
     } catch (e) {
       alert('상태 변경 실패: ' + e.message)
+    } finally {
+      setLoadingId(null)
+    }
+  }
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('예약 내역을 영구 삭제합니다. 복구할 수 없습니다. 계속하시겠습니까?')) return
+    setLoadingId(id)
+    try {
+      await deleteReservation(id)
+      await onRefresh()
+    } catch (e) {
+      alert('삭제 실패: ' + e.message)
+    } finally {
+      setLoadingId(null)
+    }
+  }
+
+  const openChangeTime = (res) => {
+    setChangingId(res.id)
+    setTargetSlotId('')
+  }
+
+  const handleConfirmChangeTime = async (res) => {
+    if (!targetSlotId) { alert('변경할 상담 시간을 선택해 주세요.'); return }
+    setLoadingId(res.id)
+    try {
+      const { activeCount, maxReservations } = await getSlotAvailability(targetSlotId)
+      if (activeCount >= maxReservations) {
+        if (!window.confirm('선택하신 시간대는 이미 정원이 찼습니다. 그래도 변경하시겠습니까?')) {
+          setLoadingId(null)
+          return
+        }
+      }
+      await updateReservationSlot(res.id, targetSlotId)
+      setChangingId(null)
+      setTargetSlotId('')
+      await onRefresh()
+    } catch (e) {
+      alert('시간 변경 실패: ' + e.message)
     } finally {
       setLoadingId(null)
     }
@@ -163,6 +207,71 @@ export default function ReservationList({ slots, reservations, onRefresh }) {
                           </button>
                         )}
                       </div>
+                    </div>
+
+                    {/* ── 시간 변경 / 삭제 ── */}
+                    <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f3f4f6' }}>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        <button
+                          disabled={isLoading}
+                          onClick={() => changingId === res.id ? setChangingId(null) : openChangeTime(res)}
+                          style={{
+                            ...btnBase,
+                            background: changingId === res.id ? '#eff6ff' : '#fff',
+                            color: '#2563eb', borderColor: '#93c5fd',
+                            opacity: isLoading ? 0.55 : 1,
+                          }}
+                        >
+                          🕐 상담 시간 변경
+                        </button>
+                        <button
+                          disabled={isLoading}
+                          onClick={() => handleDelete(res.id)}
+                          style={{
+                            ...btnBase,
+                            background: '#dc2626', color: '#fff', borderColor: '#dc2626',
+                            fontWeight: 700,
+                            opacity: isLoading ? 0.55 : 1,
+                          }}
+                        >
+                          영구 삭제
+                        </button>
+                      </div>
+
+                      {changingId === res.id && (
+                        <div style={{ marginTop: 10, background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 8, padding: 12 }}>
+                          <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 8 }}>
+                            현재: {fmtSlotDate(res.date)} ({res.dayLabel?.replace('요일', '')}) {res.title} {res.startTime}~{res.endTime}
+                          </p>
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                            <select
+                              value={targetSlotId}
+                              onChange={e => setTargetSlotId(e.target.value)}
+                              style={{ flex: 1, minWidth: 220, padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 13, color: '#111827', background: '#fff' }}
+                            >
+                              <option value="">변경할 상담 시간 선택</option>
+                              {allSlots.filter(s => s.id !== res.slotId).map(s => (
+                                <option key={s.id} value={s.id}>
+                                  {fmtSlotDate(s.date)}({s.dayLabel?.replace('요일', '')}) {s.title} {s.startTime}~{s.endTime} — {s.activeCount}/{s.maxReservations}명
+                                </option>
+                              ))}
+                            </select>
+                            <button
+                              disabled={isLoading || !targetSlotId}
+                              onClick={() => handleConfirmChangeTime(res)}
+                              style={{ padding: '8px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: (isLoading || !targetSlotId) ? 0.5 : 1 }}
+                            >
+                              변경하기
+                            </button>
+                            <button
+                              onClick={() => setChangingId(null)}
+                              style={{ padding: '8px 14px', background: '#fff', color: '#6b7280', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}
+                            >
+                              취소
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )
