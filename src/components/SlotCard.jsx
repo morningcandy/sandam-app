@@ -21,8 +21,8 @@ const styles = {
   count: { fontSize: 12, color: '#9ca3af' },
   btnReserve: {
     marginTop: 4, padding: '8px 0', borderRadius: 8,
-    border: '1px solid #db2777', background: '#fdf2f8',
-    color: '#be185d', fontSize: 13, fontWeight: 600, cursor: 'pointer', width: '100%',
+    border: '1px solid #2563eb', background: '#eff6ff',
+    color: '#1d4ed8', fontSize: 13, fontWeight: 600, cursor: 'pointer', width: '100%',
   },
   btnClosed: {
     marginTop: 4, padding: '8px 0', borderRadius: 8,
@@ -53,8 +53,8 @@ export default function SlotCard({ slot, onReserve, isBeforeOpen, isAfterClose }
       <button
         style={styles.btnReserve}
         onClick={() => onReserve(slot)}
-        onMouseOver={e => { e.currentTarget.style.background = '#db2777'; e.currentTarget.style.color = '#fff' }}
-        onMouseOut={e => { e.currentTarget.style.background = '#fdf2f8'; e.currentTarget.style.color = '#be185d' }}
+        onMouseOver={e => { e.currentTarget.style.background = '#2563eb'; e.currentTarget.style.color = '#fff' }}
+        onMouseOut={e => { e.currentTarget.style.background = '#eff6ff'; e.currentTarget.style.color = '#1d4ed8' }}
       >
         예약하기
       </button>

@@ -23,7 +23,7 @@ const inputStyle = {
   borderRadius: 8, fontSize: 14, color: '#111827', background: '#fff', outline: 'none',
 }
 const primaryBtn = {
-  flex: 1, padding: '10px 0', background: '#db2777', color: '#fff',
+  flex: 1, padding: '10px 0', background: '#2563eb', color: '#fff',
   border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer',
 }
 const secondaryBtn = {
@@ -284,7 +284,6 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
                       value={opt}
                       checked={form.visitorRelation === opt}
                       onChange={() => set('visitorRelation', opt)}
-                      style={{ accentColor: '#db2777' }}
                     />
                     {opt}
                   </label>
@@ -337,8 +336,7 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
                     <label key={m} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, cursor: 'pointer' }}>
                       <input type="radio" name="method" value={m}
                         checked={form.counselingMethod === m}
-                        onChange={() => set('counselingMethod', m)}
-                        style={{ accentColor: '#db2777' }} />
+                        onChange={() => set('counselingMethod', m)} />
                       {m}
                     </label>
                   ))}
@@ -365,7 +363,7 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
                   set('consent', e.target.checked)
                   if (e.target.checked) setConsentError(false)
                 }}
-                style={{ marginTop: 2, flexShrink: 0, accentColor: '#db2777' }}
+                style={{ marginTop: 2, flexShrink: 0 }}
               />
               상담 예약을 위해 입력한 개인정보 수집 및 이용에 동의합니다.
             </label>
