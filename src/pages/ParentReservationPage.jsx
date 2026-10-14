@@ -2,10 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react'
 import SlotCard from '../components/SlotCard'
 import ReservationForm from '../components/ReservationForm'
 import { getSlotsByDate, getReservationsByStudentName, getConfig } from '../services/storageService'
-import { HOLIDAY_MAP, SPECIAL_DAY_NOTICE, AVAILABLE_DATES } from '../data/initialSlots'
+import { HOLIDAY_MAP, SPECIAL_DAY_NOTICE, AVAILABLE_DATES, CALENDAR_YEAR, CALENDAR_MONTH } from '../data/initialSlots'
 
 const DOW = ['일', '월', '화', '수', '목', '금', '토']
-const JUNE_FIRST_DOW = new Date(2026, 5, 1).getDay()
+const MONTH_FIRST_DOW = new Date(CALENDAR_YEAR, CALENDAR_MONTH - 1, 1).getDay()
+const MONTH_DAYS = new Date(CALENDAR_YEAR, CALENDAR_MONTH, 0).getDate()
+const MONTH_PREFIX = `${CALENDAR_YEAR}-${String(CALENDAR_MONTH).padStart(2, '0')}-`
 
 const STATUS_STYLE = {
   '예약 완료': { background: '#dbeafe', color: '#1e40af' },
@@ -95,7 +97,7 @@ export default function ParentReservationPage() {
 
   const getDayType = (dateStr) => {
     if (HOLIDAY_MAP[dateStr]) return 'holiday'
-    if (dateStr === '2026-06-04') return 'special'
+    if (SPECIAL_DAY_NOTICE[dateStr]) return 'special'
     if (AVAILABLE_DATES.includes(dateStr)) return 'available'
     return 'none'
   }
@@ -137,7 +139,7 @@ export default function ParentReservationPage() {
             </div>
             <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13, color: '#4b5563' }}>
               <span>📞 010-9551-0903</span>
-              <span>📅 상담 신청: 5/27(수) 오후 1시 ~ 5/29(금) 오후 1시</span>
+              <span>📅 상담 신청: 10/26(월) 오후 1시 ~ 10/28(수) 오후 1시</span>
             </div>
           </div>
         </div>
@@ -202,7 +204,7 @@ export default function ParentReservationPage() {
             {/* 캘린더 */}
             <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e5e7eb', padding: '1.25rem', marginBottom: '1.25rem' }}>
               <div style={{ textAlign: 'center', marginBottom: 16 }}>
-                <span style={{ fontSize: 16, fontWeight: 700 }}>2026년 6월</span>
+                <span style={{ fontSize: 16, fontWeight: 700 }}>{CALENDAR_YEAR}년 {CALENDAR_MONTH}월</span>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6, marginBottom: 6 }}>
@@ -214,11 +216,11 @@ export default function ParentReservationPage() {
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 }}>
-                {Array.from({ length: JUNE_FIRST_DOW }).map((_, i) => <div key={'e' + i} />)}
-                {Array.from({ length: 30 }, (_, i) => {
+                {Array.from({ length: MONTH_FIRST_DOW }).map((_, i) => <div key={'e' + i} />)}
+                {Array.from({ length: MONTH_DAYS }, (_, i) => {
                   const day = i + 1
-                  const dateStr = `2026-06-${String(day).padStart(2, '0')}`
-                  const dow = (JUNE_FIRST_DOW + i) % 7
+                  const dateStr = MONTH_PREFIX + String(day).padStart(2, '0')
+                  const dow = (MONTH_FIRST_DOW + i) % 7
                   const type = getDayType(dateStr)
                   const isSelected = selectedDate === dateStr
                   const clickable = type === 'available' || type === 'special'
@@ -241,9 +243,9 @@ export default function ParentReservationPage() {
               <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 16, paddingTop: 14, borderTop: '1px solid #f3f4f6', justifyContent: 'center' }}>
                 {[
                   { color: '#eff6ff', border: '#93c5fd', label: '예약 가능' },
-                  { color: '#f5f3ff', border: '#c4b5fd', label: '학력평가일 (전화 중심)' },
-                  { color: '#fef2f2', border: '#fecaca', label: '상담 불가' },
-                ].map(item => (
+                  Object.keys(SPECIAL_DAY_NOTICE).length > 0 && { color: '#f5f3ff', border: '#c4b5fd', label: '학력평가일 (전화 중심)' },
+                  Object.keys(HOLIDAY_MAP).length > 0 && { color: '#fef2f2', border: '#fecaca', label: '상담 불가' },
+                ].filter(Boolean).map(item => (
                   <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#6b7280' }}>
                     <div style={{ width: 14, height: 14, borderRadius: 4, background: item.color, border: `1px solid ${item.border}` }} />
                     {item.label}

@@ -10,10 +10,9 @@ import ReservationList from '../components/ReservationList'
 import { AVAILABLE_DATES } from '../data/initialSlots'
 import { CLASS_ROSTER } from '../data/classRoster'
 
-const DAY_LABELS = {
-  '2026-06-01': '월', '2026-06-02': '화', '2026-06-04': '목',
-  '2026-06-05': '금', '2026-06-08': '월', '2026-06-09': '화',
-}
+const DAY_LABELS = Object.fromEntries(
+  AVAILABLE_DATES.map(d => [d, '일월화수목금토'[new Date(d).getDay()]])
+)
 
 const STATUS_STYLE = {
   '예약 완료': { bg: '#dbeafe', color: '#1e40af', border: '#93c5fd' },

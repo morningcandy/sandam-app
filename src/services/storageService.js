@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { INITIAL_SLOTS } from '../data/initialSlots'
+import { INITIAL_SLOTS, isInCurrentPeriod } from '../data/initialSlots'
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -90,7 +90,7 @@ export async function getAllSlots() {
     .order('date')
     .order('start_time')
   if (error) throw new Error(error.message)
-  return withActiveCounts(data ?? [])
+  return withActiveCounts((data ?? []).filter(s => isInCurrentPeriod(s.date)))
 }
 
 export async function getSlotsByDate(date) {
@@ -155,7 +155,7 @@ export async function getAllReservations() {
     .select('*, slots(*)')
     .order('created_at', { ascending: false })
   if (error) throw new Error(error.message)
-  return (data ?? []).map(mapReservation)
+  return (data ?? []).filter(r => isInCurrentPeriod(r.slots?.date)).map(mapReservation)
 }
 
 export async function getReservationsByDate(date) {
@@ -174,7 +174,7 @@ export async function getReservationsByStudentNumber(studentNumber) {
     .select('*, slots(*)')
     .eq('student_number', studentNumber)
   if (error) throw new Error(error.message)
-  return (data ?? []).map(mapReservation)
+  return (data ?? []).filter(r => isInCurrentPeriod(r.slots?.date)).map(mapReservation)
 }
 
 export async function getReservationsByStudentName(studentName, parentPhone) {
@@ -184,7 +184,7 @@ export async function getReservationsByStudentName(studentName, parentPhone) {
     .eq('student_name', studentName)
     .eq('parent_phone', parentPhone)
   if (error) throw new Error(error.message)
-  return (data ?? []).map(mapReservation)
+  return (data ?? []).filter(r => isInCurrentPeriod(r.slots?.date)).map(mapReservation)
 }
 
 export async function getSlotAvailability(slotId) {
