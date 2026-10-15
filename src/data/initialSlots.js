@@ -17,17 +17,16 @@ const PERIODS = {
   7: ['15:10', '15:35', '16:00'],
 }
 
-// 저녁 상담 시간 (가정통신문 기준)
-const EVENING_SHORT = [['17:00', '17:25'], ['17:27', '17:50']]
-const EVENING_LONG = [...EVENING_SHORT, ['18:30', '18:55'], ['18:55', '19:20']]
+// 저녁 상담 시간 (가정통신문 기준, 11/4 수요일만 운영)
+const EVENING = [['17:00', '17:25'], ['17:27', '17:50'], ['18:30', '18:55'], ['18:55', '19:20']]
 
 // 날짜별 상담 가능 교시 / 저녁 상담
 const SCHEDULE = [
-  { date: '2026-11-02', dayLabel: '월요일', periods: [2, 3, 4, 5], evening: EVENING_SHORT },
+  { date: '2026-11-02', dayLabel: '월요일', periods: [2, 3, 4, 5], evening: [] },
   { date: '2026-11-03', dayLabel: '화요일', periods: [4, 5, 6], evening: [] },
-  { date: '2026-11-04', dayLabel: '수요일', periods: [2, 4, 5, 6, 7], evening: EVENING_LONG },
+  { date: '2026-11-04', dayLabel: '수요일', periods: [2, 4, 5, 6, 7], evening: EVENING },
   { date: '2026-11-05', dayLabel: '목요일', periods: [2, 4, 5], evening: [] },
-  { date: '2026-11-06', dayLabel: '금요일', periods: [1, 2, 3, 4, 7], evening: EVENING_SHORT },
+  { date: '2026-11-06', dayLabel: '금요일', periods: [1, 2, 3, 4, 7], evening: [] },
 ]
 
 const baseSlot = { location: '2교무실', allowedMethods: ['대면', '전화'], maxReservations: 1, notice: '', isSpecial: false }
