@@ -358,7 +358,7 @@ export default function ParentReservationPage() {
                         <span style={{ color: '#9ca3af' }}>장소</span><span>{r.location}</span>
                         <span style={{ color: '#9ca3af' }}>학부모</span><span>{r.parentName} ({r.parentPhone})</span>
                         <span style={{ color: '#9ca3af' }}>방식</span><span>{r.counselingMethod}</span>
-                        <span style={{ color: '#9ca3af' }}>내용</span><span style={{ color: '#374151' }}>{r.counselingContent}</span>
+                        <span style={{ color: '#9ca3af' }}>내용</span><span style={{ color: '#374151', whiteSpace: 'pre-line' }}>{r.counselingContent}</span>
                       </div>
                     </div>
                   ))}

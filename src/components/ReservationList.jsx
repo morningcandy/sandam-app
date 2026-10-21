@@ -149,7 +149,7 @@ export default function ReservationList({ slots, reservations, allSlots = [], on
                       <span style={{ color: '#9ca3af' }}>연락처</span><span>{res.parentPhone}</span>
                       <span style={{ color: '#9ca3af' }}>방식</span><span>{res.counselingMethod}</span>
                       <span style={{ color: '#9ca3af' }}>내용</span>
-                      <span style={{ color: '#374151', lineHeight: 1.5 }}>{res.counselingContent}</span>
+                      <span style={{ color: '#374151', whiteSpace: 'pre-line', lineHeight: 1.5 }}>{res.counselingContent}</span>
                     </div>
 
                     {/* ── 상태 변경 버튼 (항상 표시) ── */}

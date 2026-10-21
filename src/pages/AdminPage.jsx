@@ -84,7 +84,7 @@ function FilterPanel({ filter, reservations, onStatusChange, onDelete, onClose, 
                 <span style={{ color: '#9ca3af' }}>학부모</span><span>{res.parentName}{res.visitorRelation ? ` (${res.visitorRelation})` : ''}</span>
                 <span style={{ color: '#9ca3af' }}>연락처</span><span>{res.parentPhone}</span>
                 <span style={{ color: '#9ca3af' }}>방식</span><span>{res.counselingMethod}</span>
-                <span style={{ color: '#9ca3af' }}>내용</span><span style={{ color: '#374151' }}>{res.counselingContent}</span>
+                <span style={{ color: '#9ca3af' }}>내용</span><span style={{ color: '#374151', whiteSpace: 'pre-line' }}>{res.counselingContent}</span>
               </div>
 
               {/* 액션 버튼 */}

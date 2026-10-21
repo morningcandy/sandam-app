@@ -6,6 +6,21 @@ const ROSTER_MAP = Object.fromEntries(CLASS_ROSTER.map(s => [s.name, s.studentNu
 const BIRTHDATE_MAP = Object.fromEntries(CLASS_ROSTER.map(s => [s.name, s.birthdate]))
 
 const RELATION_OPTIONS = ['모', '부', '부모 둘다', '기타']
+const TOPIC_OPTIONS = ['진학(대학·학과)', '성적·학습', '진로 고민·변경', '학교생활·교우관계', '기타']
+const REGION_OPTIONS = ['수도권만', '지방 가능', '기숙사·자취 가능']
+const SCHOOL_TYPE_OPTIONS = ['4년제만', '전문대 포함', '상관없음']
+
+// 상담 희망 내용 문항들을 DB counseling_content 한 칸에 항목별 줄로 저장
+function composeCounselingContent(f) {
+  const topics = f.topics.map(t => (t === '기타' ? `기타(${f.topicOther.trim()})` : t)).join(', ')
+  return [
+    `[상담 주제] ${topics}`,
+    `[가장 궁금한 점] ${f.question.trim()}`,
+    `[자녀가 원하는 진로] ${f.childCareer.trim()}`,
+    `[부모님이 바라거나 걱정하시는 방향] ${f.parentHope.trim() || '없음'}`,
+    `[진학 범위] 지역: ${f.region} / 학교 유형: ${f.schoolType}`,
+  ].join('\n')
+}
 
 const overlay = {
   position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
@@ -18,6 +33,12 @@ const modal = {
   boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
 }
 const labelStyle = { display: 'block', fontSize: 13, color: '#6b7280', marginBottom: 5, fontWeight: 500 }
+const hintStyle = { fontSize: 11, color: '#9ca3af', marginTop: -2, marginBottom: 6, lineHeight: 1.5 }
+const chip = (on) => ({
+  display: 'inline-flex', alignItems: 'center', gap: 4, padding: '6px 12px', borderRadius: 20, fontSize: 13, cursor: 'pointer',
+  border: on ? '1px solid #2563eb' : '1px solid #e5e7eb', background: on ? '#eff6ff' : '#fff', color: on ? '#1d4ed8' : '#374151',
+  fontWeight: on ? 600 : 400,
+})
 const inputStyle = {
   width: '100%', padding: '9px 12px', border: '1px solid #e5e7eb',
   borderRadius: 8, fontSize: 14, color: '#111827', background: '#fff', outline: 'none',
@@ -31,7 +52,8 @@ const secondaryBtn = {
   border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 14, cursor: 'pointer',
 }
 
-export default function ReservationForm({ slot, onClose, onSuccess }) {
+// previewMode: 로컬 체험용(/dev/form). 제출해도 DB에 저장하지 않는다.
+export default function ReservationForm({ slot, onClose, onSuccess, previewMode = false }) {
   const [form, setForm] = useState({
     studentName: '',
     studentNumber: '',
@@ -40,7 +62,13 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
     visitorRelation: '',
     visitorRelationCustom: '',
     parentPhone: '010-',
-    counselingContent: '',
+    topics: [],
+    topicOther: '',
+    question: '',
+    childCareer: '',
+    parentHope: '',
+    region: '',
+    schoolType: '',
     counselingMethod: (slot.allowedMethods ?? [])[0] ?? '',
     consent: false,
   })
@@ -51,6 +79,9 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
   const [consentError, setConsentError] = useState(false)
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  const toggleTopic = (t) => setForm(f => ({
+    ...f, topics: f.topics.includes(t) ? f.topics.filter(x => x !== t) : [...f.topics, t],
+  }))
 
   const handleNameChange = (name) => {
     set('studentName', name)
@@ -120,13 +151,39 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
       setError('학부모 연락처를 010-XXXX-XXXX 형식으로 입력해 주세요.')
       return
     }
-    if (!form.counselingContent || !form.counselingMethod) {
-      setError('모든 항목을 입력해 주세요.')
+    if (form.topics.length === 0) {
+      setError('상담 주제를 하나 이상 선택해 주세요.')
+      return
+    }
+    if (form.topics.includes('기타') && !form.topicOther.trim()) {
+      setError('상담 주제의 기타 내용을 직접 입력해 주세요.')
+      return
+    }
+    if (!form.question.trim()) {
+      setError('가장 궁금한 점을 입력해 주세요.')
+      return
+    }
+    if (!form.childCareer.trim()) {
+      setError('자녀가 원하는 진로를 입력해 주세요. 모르시면 "모름"이라고 적어 주세요.')
+      return
+    }
+    if (!form.region || !form.schoolType) {
+      setError('진학 범위의 지역과 학교 유형을 각각 선택해 주세요.')
+      return
+    }
+    if (!form.counselingMethod) {
+      setError('상담 방식을 선택해 주세요.')
       return
     }
     if (!form.consent) {
       setConsentError(true)
       setError('개인정보 수집 동의를 체크해 주세요.')
+      return
+    }
+
+    if (previewMode) {
+      setError('')
+      setSubmitted(true)
       return
     }
 
@@ -159,7 +216,7 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
         parentName: form.parentName,
         visitorRelation: finalRelation,
         parentPhone: form.parentPhone,
-        counselingContent: form.counselingContent,
+        counselingContent: composeCounselingContent(form),
         counselingMethod: form.counselingMethod,
       })
       setSubmitted(true)
@@ -207,6 +264,13 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
               </div>
             </div>
 
+            {previewMode && (
+              <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 12, padding: '14px 16px', marginBottom: 16, textAlign: 'left' }}>
+                <p style={{ fontSize: 12, fontWeight: 700, color: '#92400e', marginBottom: 8 }}>[체험 모드] 선생님 화면에 저장될 상담 내용 — 실제로는 저장되지 않았습니다</p>
+                <p style={{ fontSize: 13, color: '#374151', whiteSpace: 'pre-line', lineHeight: 1.6 }}>{composeCounselingContent(form)}</p>
+              </div>
+            )}
+
             <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 20, lineHeight: 1.6 }}>
               <strong>내 예약 확인</strong> 탭에서 학생 이름과 학부모 휴대폰 번호로 예약 내역을 조회하실 수 있습니다.
             </p>
@@ -216,6 +280,11 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
           </div>
         ) : (
           <>
+            {previewMode && (
+              <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#92400e', marginBottom: 12 }}>
+                체험 모드 · 예약 완료를 눌러도 실제로 저장되지 않습니다.
+              </div>
+            )}
             <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>예약하기</h2>
             <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 20 }}>
               {fmtDate} · {slot.title} ({slot.startTime}~{slot.endTime})
@@ -315,14 +384,94 @@ export default function ReservationForm({ slot, onClose, onSuccess }) {
             </div>
 
             {/* 상담 희망 내용 */}
-            <div style={{ marginBottom: 14 }}>
-              <label style={labelStyle}>상담 희망 내용 <span style={{ color: '#dc2626' }}>*</span></label>
-              <textarea
-                style={{ ...inputStyle, resize: 'vertical', minHeight: 80 }}
-                placeholder="상담하고 싶은 내용을 적어주세요."
-                value={form.counselingContent}
-                onChange={e => set('counselingContent', e.target.value)}
-              />
+            <div style={{ margin: '20px 0 14px', paddingTop: 16, borderTop: '1px solid #f3f4f6' }}>
+              <p style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 2 }}>상담 희망 내용</p>
+              <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 14 }}>미리 알려 주시면 자료를 준비해 더 알찬 상담이 되도록 하겠습니다.</p>
+
+              {/* 상담 주제 */}
+              <div style={{ marginBottom: 14 }}>
+                <label style={labelStyle}>상담 주제 <span style={{ color: '#dc2626' }}>*</span></label>
+                <p style={hintStyle}>여러 개 선택할 수 있습니다.</p>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {TOPIC_OPTIONS.map(t => {
+                    const on = form.topics.includes(t)
+                    return (
+                      <label key={t} style={chip(on)}>
+                        <input type="checkbox" checked={on} onChange={() => toggleTopic(t)} style={{ display: 'none' }} />
+                        {on ? '✓ ' : ''}{t}
+                      </label>
+                    )
+                  })}
+                </div>
+                {form.topics.includes('기타') && (
+                  <input
+                    style={{ ...inputStyle, marginTop: 8 }}
+                    placeholder="상담 주제를 직접 입력해 주세요"
+                    value={form.topicOther}
+                    onChange={e => set('topicOther', e.target.value)}
+                  />
+                )}
+              </div>
+
+              {/* 가장 궁금한 점 */}
+              <div style={{ marginBottom: 14 }}>
+                <label style={labelStyle}>가장 궁금한 점 <span style={{ color: '#dc2626' }}>*</span></label>
+                <p style={hintStyle}>한두 문장으로 적어 주세요.</p>
+                <textarea
+                  style={{ ...inputStyle, resize: 'vertical', minHeight: 64 }}
+                  placeholder='예) "간호학과를 원하는데 지금 성적으로 어느 정도 대학이 가능한지 궁금합니다."'
+                  value={form.question}
+                  onChange={e => set('question', e.target.value)}
+                />
+              </div>
+
+              {/* 자녀가 원하는 진로 */}
+              <div style={{ marginBottom: 14 }}>
+                <label style={labelStyle}>자녀가 원하는 진로 <span style={{ color: '#dc2626' }}>*</span></label>
+                <p style={hintStyle}>자녀에게 들으신 희망 학과·직업을 적어 주세요. 모르시면 "모름"이라고 적어 주세요.</p>
+                <input
+                  style={inputStyle}
+                  placeholder="예) 간호학과 / 모름"
+                  value={form.childCareer}
+                  onChange={e => set('childCareer', e.target.value)}
+                />
+              </div>
+
+              {/* 부모님이 바라거나 걱정하시는 방향 */}
+              <div style={{ marginBottom: 14 }}>
+                <label style={labelStyle}>부모님이 바라거나 걱정하시는 방향 <span style={{ fontSize: 11, color: '#9ca3af' }}>(선택)</span></label>
+                <textarea
+                  style={{ ...inputStyle, resize: 'vertical', minHeight: 56 }}
+                  placeholder='예) "지방 대학도 괜찮은지", "예체능 진로가 걱정됨"'
+                  value={form.parentHope}
+                  onChange={e => set('parentHope', e.target.value)}
+                />
+              </div>
+
+              {/* 진학 범위 */}
+              <div>
+                <label style={labelStyle}>진학 범위 <span style={{ color: '#dc2626' }}>*</span></label>
+                <p style={hintStyle}>지역과 학교 유형을 각각 하나씩 골라 주세요.</p>
+                {[
+                  { key: 'region', label: '지역', options: REGION_OPTIONS },
+                  { key: 'schoolType', label: '학교 유형', options: SCHOOL_TYPE_OPTIONS },
+                ].map(group => (
+                  <div key={group.key} style={{ marginBottom: 10 }}>
+                    <p style={{ fontSize: 12, color: '#6b7280', fontWeight: 600, marginBottom: 6 }}>{group.label}</p>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {group.options.map(o => {
+                      const on = form[group.key] === o
+                      return (
+                        <label key={o} style={chip(on)}>
+                          <input type="radio" name={group.key} checked={on} onChange={() => set(group.key, o)} style={{ display: 'none' }} />
+                          {o}
+                        </label>
+                      )
+                    })}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* 상담 방식 */}
