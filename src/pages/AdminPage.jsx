@@ -21,9 +21,40 @@ const STATUS_STYLE = {
 }
 
 // ── 상태별 필터 패널 ──────────────────────────────────────────
+const SORT_OPTIONS = [
+  { key: 'date', label: '상담 날짜순' },
+  { key: 'applied', label: '신청순' },
+  { key: 'recent', label: '최근 신청순' },
+  { key: 'number', label: '학번순' },
+]
+
+const byCreated = (a, b) => (a.createdAt || '').localeCompare(b.createdAt || '')
+const SORTERS = {
+  date: (a, b) => `${a.date || ''} ${a.startTime || ''}`.localeCompare(`${b.date || ''} ${b.startTime || ''}`) || byCreated(a, b),
+  applied: byCreated,
+  recent: (a, b) => byCreated(b, a),
+  number: (a, b) => String(a.studentNumber || '').localeCompare(String(b.studentNumber || '')) || byCreated(a, b),
+}
+
+// 신청 시각을 KST 기준 'M/D HH:MM'으로 표시
+const fmtCreatedAt = (v) => {
+  if (!v) return ''
+  const k = new Date(new Date(v).getTime() + 9 * 3600 * 1000)
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${k.getUTCMonth() + 1}/${k.getUTCDate()} ${pad(k.getUTCHours())}:${pad(k.getUTCMinutes())}`
+}
+
 function FilterPanel({ filter, reservations, onStatusChange, onDelete, onClose, loadingId }) {
   const s = STATUS_STYLE[filter] || STATUS_STYLE['예약 완료']
   const fmtDate = (d) => d ? d.replace('2026-', '').replace('-', '월 ') + '일' : ''
+  const [sortKey, setSortKey] = useState(() => {
+    try { return localStorage.getItem('admin_sort') || 'date' } catch { return 'date' }
+  })
+  const changeSort = (key) => {
+    setSortKey(key)
+    try { localStorage.setItem('admin_sort', key) } catch { /* 저장 불가 시 무시 */ }
+  }
+  const sorted = [...reservations].sort(SORTERS[sortKey] || SORTERS.date)
 
   return (
     <div style={{
@@ -48,19 +79,34 @@ function FilterPanel({ filter, reservations, onStatusChange, onDelete, onClose, 
         </button>
       </div>
 
+      {/* 정렬 탭 */}
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+        {SORT_OPTIONS.map(o => (
+          <button key={o.key} onClick={() => changeSort(o.key)} style={{
+            padding: '6px 12px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+            border: sortKey === o.key ? `1px solid ${s.color}` : '1px solid #e5e7eb',
+            background: sortKey === o.key ? s.color : '#fff',
+            color: sortKey === o.key ? '#fff' : '#374151',
+          }}>
+            {o.label}
+          </button>
+        ))}
+      </div>
+
       {reservations.length === 0 ? (
         <p style={{ fontSize: 14, color: '#9ca3af', textAlign: 'center', padding: '2rem 0' }}>
           해당 내역이 없습니다.
         </p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {reservations.map(res => (
+          {sorted.map((res, idx) => (
             <div key={res.id} style={{
               background: '#f9fafb', border: '1px solid #f3f4f6', borderRadius: 10, padding: '12px 14px',
             }}>
               {/* 날짜·슬롯 정보 */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: 6 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#9ca3af', minWidth: 18 }}>{idx + 1}</span>
                   <span style={{ fontSize: 13, fontWeight: 700, color: '#1d4ed8' }}>
                     {fmtDate(res.date)} ({res.dayLabel?.replace('요일', '')})
                   </span>
@@ -68,6 +114,7 @@ function FilterPanel({ filter, reservations, onStatusChange, onDelete, onClose, 
                     {res.title} {res.startTime}~{res.endTime}
                   </span>
                   <span style={{ fontSize: 11, color: '#9ca3af' }}>{res.location}</span>
+                  {res.createdAt && <span style={{ fontSize: 11, color: '#9ca3af' }}>· 신청 {fmtCreatedAt(res.createdAt)}</span>}
                 </div>
                 <span style={{
                   fontSize: 11, padding: '2px 10px', borderRadius: 20, fontWeight: 600,
