@@ -13,6 +13,7 @@ const STATUS_STYLE = {
   '예약 완료': { background: '#dbeafe', color: '#1e40af' },
   '상담 완료': { background: '#d1fae5', color: '#065f46' },
   '예약 취소': { background: '#fee2e2', color: '#991b1b' },
+  '보류': { background: '#f3e8ff', color: '#6b21a8' },
 }
 
 export default function ParentReservationPage() {
@@ -23,6 +24,7 @@ export default function ParentReservationPage() {
   const [reservingSlot, setReservingSlot] = useState(null)
   const [openAt, setOpenAt] = useState(null)
   const [closeAt, setCloseAt] = useState(null)
+  const [extra, setExtra] = useState({ openAt: null, closeAt: null, students: [] })
   const [configLoaded, setConfigLoaded] = useState(false)
 
   // 내 예약 조회
@@ -37,6 +39,7 @@ export default function ParentReservationPage() {
     getConfig().then(cfg => {
       setOpenAt(cfg.openAt || null)
       setCloseAt(cfg.closeAt || null)
+      setExtra({ openAt: cfg.extraOpenAt, closeAt: cfg.extraCloseAt, students: cfg.extraStudents })
       setConfigLoaded(true)
     }).catch(() => setConfigLoaded(true))
   }, [])
@@ -81,6 +84,10 @@ export default function ParentReservationPage() {
   const isBeforeOpen = !!openAt && now < new Date(openAt)
   const isAfterClose = !!closeAt && now > new Date(closeAt)
   const isReservationOpen = !isBeforeOpen && !isAfterClose
+  // 정규 기간이 아닐 때 추가 오픈 기간이면 지정 학생만 신청 가능
+  const isExtraWindow = extra.students.length > 0 && !!extra.openAt && !!extra.closeAt
+    && now >= new Date(extra.openAt) && now <= new Date(extra.closeAt)
+  const extraOnly = !isReservationOpen && isExtraWindow
   // Supabase에서 오는 UTC ISO 문자열을 KST(+9)로 변환해서 표시
   const fmtOpenAt = (dt) => {
     if (!dt) return ''
@@ -178,7 +185,19 @@ export default function ParentReservationPage() {
         {tab === 'calendar' && configLoaded && (
           <>
             {/* 오픈 예정 배너 */}
-            {isBeforeOpen && (
+            {extraOnly && (
+              <div style={{ background: '#ecfdf5', border: '1px solid #6ee7b7', borderRadius: 12, padding: '12px 16px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 20 }}>🟢</span>
+                <div>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: '#065f46', marginBottom: 2 }}>추가 신청 기간입니다</p>
+                  <p style={{ fontSize: 12, color: '#047857' }}>
+                    담임 선생님께 안내받은 학생만 <strong>{fmtOpenAt(extra.closeAt)}</strong>까지 신청하실 수 있습니다.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {isBeforeOpen && !extraOnly && (
               <div style={{ background: '#f5f3ff', border: '1px solid #c4b5fd', borderRadius: 12, padding: '12px 16px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ fontSize: 20 }}>🔒</span>
                 <div>
@@ -191,7 +210,7 @@ export default function ParentReservationPage() {
             )}
 
             {/* 마감 배너 */}
-            {isAfterClose && (
+            {isAfterClose && !extraOnly && (
               <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 12, padding: '12px 16px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ fontSize: 20 }}>🔴</span>
                 <div>
@@ -287,7 +306,7 @@ export default function ParentReservationPage() {
                   ) : (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
                       {slots.map(slot => (
-                        <SlotCard key={slot.id} slot={slot} onReserve={setReservingSlot} isBeforeOpen={isBeforeOpen} isAfterClose={isAfterClose} />
+                        <SlotCard key={slot.id} slot={slot} onReserve={setReservingSlot} isBeforeOpen={isBeforeOpen && !extraOnly} isAfterClose={isAfterClose && !extraOnly} />
                       ))}
                     </div>
                   )}
@@ -360,6 +379,9 @@ export default function ParentReservationPage() {
                         <span style={{ color: '#9ca3af' }}>방식</span><span>{r.counselingMethod}</span>
                         <span style={{ color: '#9ca3af' }}>내용</span><span style={{ color: '#374151', whiteSpace: 'pre-line' }}>{r.counselingContent}</span>
                       </div>
+                      {r.status === '보류' && (
+                        <p style={{ fontSize: 12, color: '#6b21a8', marginTop: 8 }}>상담 시간을 다시 조정 중입니다. 담임 선생님이 따로 연락드릴 예정입니다.</p>
+                      )}
                     </div>
                   ))}
                   <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '12px 14px', fontSize: 13, color: '#92400e', lineHeight: 1.6 }}>
@@ -377,6 +399,7 @@ export default function ParentReservationPage() {
           slot={reservingSlot}
           onClose={handleCloseForm}
           onSuccess={handleReserveSuccess}
+          allowedStudentNumbers={extraOnly ? extra.students : null}
         />
       )}
     </div>

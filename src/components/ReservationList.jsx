@@ -5,12 +5,13 @@ const STATUS_BADGE = {
   '예약 완료': { background: '#dbeafe', color: '#1e40af', border: '#93c5fd' },
   '상담 완료': { background: '#d1fae5', color: '#065f46', border: '#6ee7b7' },
   '예약 취소': { background: '#fee2e2', color: '#991b1b', border: '#fca5a5' },
+  '보류': { background: '#f3e8ff', color: '#6b21a8', border: '#d8b4fe' },
 }
 
 const fmtSlotDate = (d) => d ? d.replace('2026-', '').replace('-', '월 ') + '일' : ''
 
-// 기본 뷰: 예약 취소된 건은 표시하지 않음 (관리자 필터 패널에서 별도 관리)
-export default function ReservationList({ slots, reservations, allSlots = [], onRefresh }) {
+// 기본 뷰: 예약 취소·보류 건은 표시하지 않음 (관리자 상단 카드의 필터 패널에서 별도 관리)
+export default function ReservationList({ slots, reservations, allSlots = [], onRefresh, onEdit }) {
   const [loadingId, setLoadingId] = useState(null)
   const [changingId, setChangingId] = useState(null)
   const [targetSlotId, setTargetSlotId] = useState('')
@@ -80,8 +81,8 @@ export default function ReservationList({ slots, reservations, allSlots = [], on
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {slots.map(slot => {
         // 취소된 예약은 기본 목록에서 제외 (상단 통계 카드 클릭 시 별도 확인)
-        const slotRes = reservations.filter(r => r.slotId === slot.id && r.status !== '예약 취소')
-        const activeCount = slotRes.filter(r => r.status !== '예약 취소').length
+        const slotRes = reservations.filter(r => r.slotId === slot.id && r.status !== '예약 취소' && r.status !== '보류')
+        const activeCount = slotRes.length
 
         return (
           <div key={slot.id} style={{ border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden' }}>
@@ -190,6 +191,21 @@ export default function ReservationList({ slots, reservations, allSlots = [], on
                           {res.status === '예약 취소' ? '✕ 예약 취소됨' : '예약 취소'}
                         </button>
 
+                        {/* 보류 버튼 (예약 완료 상태일 때만) — 시간이 비워져 다른 예약이 들어올 수 있다 */}
+                        {res.status === '예약 완료' && (
+                          <button
+                            disabled={isLoading}
+                            onClick={() => handleStatus(res.id, '보류', '보류로 바꾸면 이 시간은 비워집니다. 나중에 상단 보류 카드에서 시간을 다시 정할 수 있습니다. 보류하시겠습니까?')}
+                            style={{
+                              ...btnBase,
+                              background: '#faf5ff', color: '#7e22ce', borderColor: '#d8b4fe',
+                              opacity: isLoading ? 0.55 : 1,
+                            }}
+                          >
+                            보류
+                          </button>
+                        )}
+
                         {/* 예약 완료 복원 버튼 (상담완료·취소 상태일 때만) */}
                         {res.status !== '예약 완료' && (
                           <button
@@ -224,6 +240,15 @@ export default function ReservationList({ slots, reservations, allSlots = [], on
                         >
                           🕐 상담 시간 변경
                         </button>
+                        {onEdit && (
+                          <button
+                            disabled={isLoading}
+                            onClick={() => onEdit(res)}
+                            style={{ ...btnBase, background: '#fff', color: '#374151', borderColor: '#d1d5db', opacity: isLoading ? 0.55 : 1 }}
+                          >
+                            ✏️ 정보 수정
+                          </button>
+                        )}
                         <button
                           disabled={isLoading}
                           onClick={() => handleDelete(res.id)}

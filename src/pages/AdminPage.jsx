@@ -7,6 +7,7 @@ import {
   getConfig, updateConfig, seedSlots,
 } from '../services/storageService'
 import ReservationList from '../components/ReservationList'
+import AdminReservationEditor from '../components/AdminReservationEditor'
 import { AVAILABLE_DATES } from '../data/initialSlots'
 import { CLASS_ROSTER } from '../data/classRoster'
 
@@ -18,6 +19,7 @@ const STATUS_STYLE = {
   '예약 완료': { bg: '#dbeafe', color: '#1e40af', border: '#93c5fd' },
   '상담 완료': { bg: '#d1fae5', color: '#065f46', border: '#6ee7b7' },
   '예약 취소': { bg: '#fee2e2', color: '#991b1b', border: '#fca5a5' },
+  '보류': { bg: '#f3e8ff', color: '#6b21a8', border: '#d8b4fe' },
 }
 
 // ── 상태별 필터 패널 ──────────────────────────────────────────
@@ -44,7 +46,7 @@ const fmtCreatedAt = (v) => {
   return `${k.getUTCMonth() + 1}/${k.getUTCDate()} ${pad(k.getUTCHours())}:${pad(k.getUTCMinutes())}`
 }
 
-function FilterPanel({ filter, reservations, onStatusChange, onDelete, onClose, loadingId }) {
+function FilterPanel({ filter, reservations, onStatusChange, onDelete, onEdit, onClose, loadingId }) {
   const s = STATUS_STYLE[filter] || STATUS_STYLE['예약 완료']
   const fmtDate = (d) => d ? d.replace('2026-', '').replace('-', '월 ') + '일' : ''
   const [sortKey, setSortKey] = useState(() => {
@@ -152,7 +154,48 @@ function FilterPanel({ filter, reservations, onStatusChange, onDelete, onClose, 
                     >
                       예약 취소
                     </button>
+                    <button
+                      disabled={loadingId === res.id}
+                      onClick={() => onStatusChange(res.id, '보류', '보류로 바꾸면 이 시간은 비워집니다. 보류하시겠습니까?')}
+                      style={{ padding: '5px 12px', borderRadius: 7, border: '1px solid #d8b4fe', background: '#faf5ff', color: '#7e22ce', fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: loadingId === res.id ? 0.5 : 1 }}
+                    >
+                      보류
+                    </button>
                   </>
+                )}
+                {filter === '보류' && (
+                  <>
+                    <button
+                      disabled={loadingId === res.id}
+                      onClick={() => onEdit(res)}
+                      style={{ padding: '5px 12px', borderRadius: 7, border: '1px solid #93c5fd', background: '#eff6ff', color: '#1d4ed8', fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: loadingId === res.id ? 0.5 : 1 }}
+                    >
+                      🕐 시간 옮겨서 복원
+                    </button>
+                    <button
+                      disabled={loadingId === res.id}
+                      onClick={() => onStatusChange(res.id, '예약 완료', '원래 시간 그대로 예약 완료로 되돌리겠습니까?')}
+                      style={{ padding: '5px 12px', borderRadius: 7, border: '1px solid #d1d5db', background: '#f9fafb', color: '#6b7280', fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: loadingId === res.id ? 0.5 : 1 }}
+                    >
+                      원래 시간으로 복원
+                    </button>
+                    <button
+                      disabled={loadingId === res.id}
+                      onClick={() => onStatusChange(res.id, '예약 취소', '예약을 취소하시겠습니까?')}
+                      style={{ padding: '5px 12px', borderRadius: 7, border: '1px solid #fca5a5', background: '#fff5f5', color: '#dc2626', fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: loadingId === res.id ? 0.5 : 1 }}
+                    >
+                      예약 취소
+                    </button>
+                  </>
+                )}
+                {filter !== '예약 취소' && (
+                  <button
+                    disabled={loadingId === res.id}
+                    onClick={() => onEdit(res)}
+                    style={{ padding: '5px 12px', borderRadius: 7, border: '1px solid #d1d5db', background: '#fff', color: '#374151', fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: loadingId === res.id ? 0.5 : 1 }}
+                  >
+                    ✏️ 수정·시간 변경
+                  </button>
                 )}
                 {filter === '상담 완료' && (
                   <button
@@ -197,6 +240,7 @@ function ClassRosterPanel({ roster, reservedCount }) {
   const getStatusStyle = (status) => {
     if (status === '예약 완료') return { background: '#dbeafe', color: '#1e40af', border: '1px solid #93c5fd' }
     if (status === '상담 완료') return { background: '#d1fae5', color: '#065f46', border: '1px solid #6ee7b7' }
+    if (status === '보류') return { background: '#f3e8ff', color: '#6b21a8', border: '1px solid #d8b4fe' }
     if (status === '예약 취소 이력') return { background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a' }
     return { background: '#f3f4f6', color: '#9ca3af', border: '1px solid #e5e7eb' }
   }
@@ -204,6 +248,7 @@ function ClassRosterPanel({ roster, reservedCount }) {
   const getStatusLabel = (status) => {
     if (status === '예약 완료') return '예약 완료'
     if (status === '상담 완료') return '상담 완료'
+    if (status === '보류') return '보류'
     if (status === '예약 취소 이력') return '취소 이력'
     return '미신청'
   }
@@ -223,6 +268,7 @@ function ClassRosterPanel({ roster, reservedCount }) {
           {[
             { label: '예약 완료', ...getStatusStyle('예약 완료') },
             { label: '상담 완료', ...getStatusStyle('상담 완료') },
+            { label: '보류', ...getStatusStyle('보류') },
             { label: '취소 이력', ...getStatusStyle('예약 취소 이력') },
             { label: '미신청', ...getStatusStyle(null) },
           ].map(l => (
@@ -363,6 +409,107 @@ function QRSection() {
   )
 }
 
+// ── 추가 오픈 (지정 학생만) ────────────────────────────────────
+// 정규 신청 기간을 놓친 학생만 골라 별도 기간 동안 신청을 열어 준다.
+// saved의 시각은 KST "YYYY-MM-DDTHH:mm" 문자열
+function ExtraOpenPanel({ roster, saved, onSave, fmtOpenAt }) {
+  const [openInput, setOpenInput] = useState(saved.openAt)
+  const [closeInput, setCloseInput] = useState(saved.closeAt)
+  const [picked, setPicked] = useState(saved.students)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    setOpenInput(saved.openAt); setCloseInput(saved.closeAt); setPicked(saved.students)
+  }, [saved])
+
+  const toggle = (num) => setPicked(p => p.includes(num) ? p.filter(x => x !== num) : [...p, num].sort())
+  const dirty = openInput !== saved.openAt || closeInput !== saved.closeAt
+    || picked.join() !== saved.students.join()
+
+  const nowKST = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 16)
+  const isSet = saved.students.length > 0 && saved.openAt && saved.closeAt
+  const state = !isSet ? null
+    : nowKST < saved.openAt ? '예정' : nowKST > saved.closeAt ? '종료' : '진행 중'
+  const pickedNames = roster.filter(r => picked.includes(r.studentNumber)).map(r => `${r.no}번 ${r.name}`)
+
+  const handleSave = async () => {
+    if (picked.length === 0) { alert('추가 오픈할 학생을 한 명 이상 선택해 주세요.'); return }
+    if (!openInput || !closeInput) { alert('추가 오픈 시작·마감 시간을 모두 입력해 주세요.'); return }
+    if (openInput >= closeInput) { alert('마감 시간은 시작 시간보다 뒤여야 합니다.'); return }
+    setSaving(true)
+    try {
+      await onSave({ openAt: openInput, closeAt: closeInput, students: picked })
+      alert(`추가 오픈이 저장되었습니다.\n${fmtOpenAt(openInput)} ~ ${fmtOpenAt(closeInput)}\n${pickedNames.join(', ')}`)
+    } catch (e) { alert('저장 실패: ' + e.message) }
+    finally { setSaving(false) }
+  }
+
+  const handleClear = async () => {
+    if (!window.confirm('추가 오픈을 해제합니다. 지정 학생도 정규 기간 외에는 신청할 수 없게 됩니다.')) return
+    setSaving(true)
+    try {
+      await onSave({ openAt: '', closeAt: '', students: [] })
+    } catch (e) { alert('해제 실패: ' + e.message) }
+    finally { setSaving(false) }
+  }
+
+  const timeInp = { padding: '7px 10px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 13, outline: 'none', color: '#111827' }
+
+  return (
+    <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '12px 14px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4, flexWrap: 'wrap', gap: 6 }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: '#15803d' }}>➕ 추가 오픈 (지정 학생만)</span>
+        {isSet
+          ? <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, background: state === '진행 중' ? '#dcfce7' : '#f9fafb', color: state === '진행 중' ? '#15803d' : '#6b7280', border: '1px solid #bbf7d0' }}>
+              {state}: {fmtOpenAt(saved.openAt)} ~ {fmtOpenAt(saved.closeAt)} · {saved.students.length}명
+            </span>
+          : <span style={{ fontSize: 11, padding: '2px 10px', borderRadius: 20, background: '#f9fafb', color: '#9ca3af', border: '1px solid #e5e7eb' }}>설정 안 됨</span>
+        }
+      </div>
+      <p style={{ fontSize: 11, color: '#6b7280', marginBottom: 10 }}>
+        정규 기간이 아닐 때, 아래에서 고른 학생의 학부모만 이 기간 동안 신청할 수 있습니다. (학부모 화면에 대상 학생 명단은 보이지 않습니다)
+      </p>
+
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 }}>
+        <span style={{ fontSize: 12, color: '#6b7280' }}>시작</span>
+        <input type="datetime-local" value={openInput} onChange={e => setOpenInput(e.target.value)} style={timeInp} />
+        <span style={{ fontSize: 12, color: '#6b7280' }}>마감</span>
+        <input type="datetime-local" value={closeInput} onChange={e => setCloseInput(e.target.value)} style={timeInp} />
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 6, marginBottom: 6 }}>
+        {roster.map(r => {
+          const on = picked.includes(r.studentNumber)
+          const reserved = r.status === '예약 완료' || r.status === '상담 완료' || r.status === '보류'
+          return (
+            <label key={r.studentNumber} style={{
+              display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, cursor: 'pointer',
+              padding: '5px 8px', borderRadius: 8,
+              background: on ? '#dcfce7' : '#fff', border: on ? '1px solid #22c55e' : '1px solid #e5e7eb',
+              color: reserved ? '#9ca3af' : '#111827',
+            }}>
+              <input type="checkbox" checked={on} onChange={() => toggle(r.studentNumber)} />
+              {r.no}번 {r.name}{reserved ? ' ✓' : ''}
+            </label>
+          )
+        })}
+      </div>
+      <p style={{ fontSize: 11, color: '#9ca3af', marginBottom: 10 }}>✓ 표시는 이미 예약한 학생입니다.</p>
+
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        <button onClick={handleSave} disabled={saving || !dirty}
+          style={{ padding: '7px 16px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: (saving || !dirty) ? 0.5 : 1 }}>
+          {saving ? '저장 중...' : '저장'}
+        </button>
+        {isSet && <button onClick={handleClear} disabled={saving}
+          style={{ padding: '7px 12px', background: '#fff', color: '#6b7280', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}>추가 오픈 해제</button>}
+        {picked.length > 0 && <span style={{ fontSize: 12, color: '#15803d' }}>선택 {picked.length}명</span>}
+      </div>
+      {dirty && <p style={{ fontSize: 11, color: '#f59e0b', marginTop: 6 }}>⚠ 저장 버튼을 눌러야 적용됩니다.</p>}
+    </div>
+  )
+}
+
 // ── 메인 AdminPage ─────────────────────────────────────────────
 export default function AdminPage() {
   const navigate = useNavigate()
@@ -380,6 +527,8 @@ export default function AdminPage() {
   const [closeAt, setCloseAt] = useState('')
   const [closeAtInput, setCloseAtInput] = useState('')
   const [closeAtSaving, setCloseAtSaving] = useState(false)
+  const [editor, setEditor] = useState(null) // null | { mode: 'add' } | { mode: 'edit', reservation }
+  const [extraOpen, setExtraOpen] = useState({ openAt: '', closeAt: '', students: [] })
   const [showAddForm, setShowAddForm] = useState(false)
   const [newSlot, setNewSlot] = useState({
     date: AVAILABLE_DATES[0], title: '', startTime: '', endTime: '',
@@ -405,6 +554,10 @@ export default function AdminPage() {
       const savedClose = toKST(cfg?.closeAt)
       setOpenAt(savedOpen); setOpenAtInput(savedOpen)
       setCloseAt(savedClose); setCloseAtInput(savedClose)
+      setExtraOpen(prev => {
+        const next = { openAt: toKST(cfg?.extraOpenAt), closeAt: toKST(cfg?.extraCloseAt), students: cfg?.extraStudents ?? [] }
+        return JSON.stringify(prev) === JSON.stringify(next) ? prev : next
+      })
     } catch (e) {
       console.error(e)
     } finally {
@@ -467,6 +620,15 @@ export default function AdminPage() {
     finally { setCloseAtSaving(false) }
   }
 
+  const handleSaveExtraOpen = async ({ openAt: o, closeAt: c, students }) => {
+    await updateConfig({
+      extraOpenAt: o ? o + ':00+09:00' : null,
+      extraCloseAt: c ? c + ':00+09:00' : null,
+      extraStudents: students,
+    })
+    setExtraOpen({ openAt: o, closeAt: c, students })
+  }
+
   const handleDeleteSlot = async (slotId) => {
     if (!window.confirm('이 상담 시간을 삭제하시겠습니까?')) return
     try { await deleteSlot(slotId); await load() }
@@ -495,6 +657,7 @@ export default function AdminPage() {
   const totalReserved = allReservations.filter(r => r.status === '예약 완료').length
   const totalDone = allReservations.filter(r => r.status === '상담 완료').length
   const totalCancelled = allReservations.filter(r => r.status === '예약 취소').length
+  const totalHeld = allReservations.filter(r => r.status === '보류').length
 
   // 필터 패널용 데이터
   const filteredReservations = activeFilter
@@ -506,11 +669,13 @@ export default function AdminPage() {
     const reses = allReservations.filter(r => r.studentNumber === student.studentNumber)
     const active = reses.find(r => r.status === '예약 완료')
     const done = reses.find(r => r.status === '상담 완료')
+    const held = reses.find(r => r.status === '보류')
     const cancelled = reses.find(r => r.status === '예약 취소')
-    const mainRes = active || done || null
+    const mainRes = active || done || held || null
     let status = null
     if (active) status = '예약 완료'
     else if (done) status = '상담 완료'
+    else if (held) status = '보류'
     else if (cancelled) status = '예약 취소 이력'
     return {
       ...student,
@@ -521,7 +686,7 @@ export default function AdminPage() {
       parentPhone: mainRes?.parentPhone ?? '',
     }
   })
-  const reservedCount = rosterWithStatus.filter(s => s.status === '예약 완료' || s.status === '상담 완료').length
+  const reservedCount = rosterWithStatus.filter(s => s.status === '예약 완료' || s.status === '상담 완료' || s.status === '보류').length
 
   const fmtDate = (d) => d.replace('2026-', '').replace('-', '월 ') + '일'
   // openAt/openAtInput은 KST "YYYY-MM-DDTHH:mm" 형식이므로 직접 파싱
@@ -614,10 +779,25 @@ export default function AdminPage() {
           </div>
         </div>
 
+        {/* ── 추가 오픈 (지정 학생만) ── */}
+        <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e5e7eb', padding: '16px 18px', marginBottom: 16 }}>
+          <ExtraOpenPanel roster={rosterWithStatus} saved={extraOpen} onSave={handleSaveExtraOpen} fmtOpenAt={fmtOpenAt} />
+        </div>
+
         {/* ── 통계 카드 (클릭 가능) ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
+          <span style={{ fontSize: 12, color: '#9ca3af' }}>카드를 누르면 상태별 전체 목록이 열립니다.</span>
+          <button
+            onClick={() => setEditor({ mode: 'add' })}
+            style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#2563eb', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+          >
+            + 예약 직접 추가
+          </button>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 16 }}>
           {[
             { label: '예약 완료', value: totalReserved, color: '#2563eb', bg: '#eff6ff', activeBg: '#dbeafe', border: '#93c5fd' },
+            { label: '보류', value: totalHeld, color: '#7e22ce', bg: '#faf5ff', activeBg: '#f3e8ff', border: '#d8b4fe' },
             { label: '상담 완료', value: totalDone,     color: '#059669', bg: '#f0fdf4', activeBg: '#dcfce7', border: '#6ee7b7' },
             { label: '예약 취소', value: totalCancelled,color: '#dc2626', bg: '#fff5f5', activeBg: '#fee2e2', border: '#fca5a5' },
           ].map(s => {
@@ -650,6 +830,7 @@ export default function AdminPage() {
             reservations={filteredReservations}
             onStatusChange={handleFilterStatusChange}
             onDelete={handleFilterDelete}
+            onEdit={(res) => setEditor({ mode: 'edit', reservation: res })}
             onClose={() => setActiveFilter(null)}
             loadingId={actionLoadingId}
           />
@@ -745,9 +926,10 @@ export default function AdminPage() {
         <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e5e7eb', padding: '16px 18px', marginBottom: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <h2 style={{ fontSize: 15, fontWeight: 700 }}>{fmtDate(selectedDate)} 예약자 상세</h2>
-            <span style={{ fontSize: 12, color: '#9ca3af' }}>예약 취소 건은 상단 빨간 카드에서 확인</span>
+            <span style={{ fontSize: 12, color: '#9ca3af' }}>보류·취소 건은 상단 카드에서 확인</span>
           </div>
-          <ReservationList slots={slots} reservations={reservations} allSlots={allSlots} onRefresh={load} />
+          <ReservationList slots={slots} reservations={reservations} allSlots={allSlots} onRefresh={load}
+            onEdit={(res) => setEditor({ mode: 'edit', reservation: res })} />
         </div>
 
         {/* ── 학급 명단 ── */}
@@ -755,6 +937,17 @@ export default function AdminPage() {
 
         {/* ── QR 코드 배포 ── */}
         <QRSection />
+
+        {editor && (
+          <AdminReservationEditor
+            mode={editor.mode}
+            reservation={editor.reservation}
+            roster={rosterWithStatus}
+            allSlots={allSlots}
+            onClose={() => setEditor(null)}
+            onSaved={load}
+          />
+        )}
 
       </main>
     </div>

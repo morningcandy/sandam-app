@@ -1,5 +1,5 @@
 // 담임 개인 알림장(GitHub Pages)의 '상담 일정표'용 학부모 상담 예약 목록.
-// 취소 건은 빼고 날짜·시간·학생 번호·상담 방법·상태만 내보낸다(학생·학부모 이름, 연락처, 상담 내용 없음).
+// 취소·보류 건은 빼고 날짜·시간·학생 번호·상담 방법·상태만 내보낸다(학생·학부모 이름, 연락처, 상담 내용 없음).
 // Supabase 키는 Vercel 환경변수에 있는 값을 서버에서만 쓴다.
 const PLANNER_ORIGINS = ['https://morningcandy.github.io', 'http://localhost:4599']
 
@@ -23,7 +23,8 @@ module.exports = async function handler(req, res) {
 
   const rows = await response.json()
   const items = rows
-    .filter((r) => r.slots && r.slots.date)
+    // 보류는 시간이 정해지지 않은 상태라 일정표에서 뺀다
+    .filter((r) => r.slots && r.slots.date && r.status !== '보류')
     .map((r) => ({
       date: r.slots.date,
       start: String(r.slots.start_time || '').slice(0, 5),

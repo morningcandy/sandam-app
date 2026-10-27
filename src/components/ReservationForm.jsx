@@ -52,8 +52,11 @@ const secondaryBtn = {
   border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 14, cursor: 'pointer',
 }
 
+const EXTRA_ONLY_MSG = '지금은 추가 신청 대상 학생만 예약할 수 있습니다. 담임 선생님께 문의해 주세요.'
+
 // previewMode: 로컬 체험용(/dev/form). 제출해도 DB에 저장하지 않는다.
-export default function ReservationForm({ slot, onClose, onSuccess, previewMode = false }) {
+// allowedStudentNumbers: 추가 오픈 기간에만 전달되는 신청 가능 학번 목록 (null이면 제한 없음)
+export default function ReservationForm({ slot, onClose, onSuccess, previewMode = false, allowedStudentNumbers = null }) {
   const [form, setForm] = useState({
     studentName: '',
     studentNumber: '',
@@ -91,7 +94,10 @@ export default function ReservationForm({ slot, onClose, onSuccess, previewMode 
       return
     }
     const num = ROSTER_MAP[name]
-    if (num) {
+    if (num && allowedStudentNumbers && !allowedStudentNumbers.includes(num)) {
+      setNameError(EXTRA_ONLY_MSG)
+      set('studentNumber', '')
+    } else if (num) {
       setNameError('')
       set('studentNumber', num)
     } else {
@@ -125,6 +131,10 @@ export default function ReservationForm({ slot, onClose, onSuccess, previewMode 
   const handleSubmit = async () => {
     if (!ROSTER_MAP[form.studentName]) {
       setError('학급 명단에 없는 학생입니다. 이름을 정확히 입력해 주세요.')
+      return
+    }
+    if (allowedStudentNumbers && !allowedStudentNumbers.includes(ROSTER_MAP[form.studentName])) {
+      setError(EXTRA_ONLY_MSG)
       return
     }
     if (!form.studentBirthdate || form.studentBirthdate.length < 6) {

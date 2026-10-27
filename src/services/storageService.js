@@ -47,12 +47,15 @@ function mapReservation(r) {
   }
 }
 
+// 슬롯 정원을 차지하지 않는 상태 (보류 = 시간 미정이라 자리를 비워 둔다)
+const NOT_HOLDING = '("예약 취소","보류")'
+
 async function withActiveCounts(slots) {
   if (!slots.length) return slots
   const { data } = await supabase
     .from('reservations')
     .select('slot_id')
-    .neq('status', '예약 취소')
+    .not('status', 'in', NOT_HOLDING)
   const countMap = {}
   ;(data ?? []).forEach(r => {
     countMap[r.slot_id] = (countMap[r.slot_id] || 0) + 1
@@ -71,13 +74,20 @@ export async function getConfig() {
   return {
     openAt: data?.open_at ?? null,
     closeAt: data?.close_at ?? null,
+    // 추가 오픈: 정규 기간과 별도로 지정 학생(학번)만 신청할 수 있는 기간
+    extraOpenAt: data?.extra_open_at ?? null,
+    extraCloseAt: data?.extra_close_at ?? null,
+    extraStudents: Array.isArray(data?.extra_students) ? data.extra_students : [],
   }
 }
 
-export async function updateConfig({ openAt, closeAt }) {
+export async function updateConfig({ openAt, closeAt, extraOpenAt, extraCloseAt, extraStudents }) {
   const updates = { id: 1 }
   if (openAt !== undefined) updates.open_at = openAt ?? null
   if (closeAt !== undefined) updates.close_at = closeAt ?? null
+  if (extraOpenAt !== undefined) updates.extra_open_at = extraOpenAt ?? null
+  if (extraCloseAt !== undefined) updates.extra_close_at = extraCloseAt ?? null
+  if (extraStudents !== undefined) updates.extra_students = extraStudents ?? []
   const { error } = await supabase.from('config').upsert(updates)
   if (error) throw new Error(error.message)
 }
@@ -190,7 +200,7 @@ export async function getReservationsByStudentName(studentName, parentPhone) {
 export async function getSlotAvailability(slotId) {
   const [{ data: slotData, error: slotErr }, { data: resData }] = await Promise.all([
     supabase.from('slots').select('max_reservations').eq('id', slotId).single(),
-    supabase.from('reservations').select('id').eq('slot_id', slotId).neq('status', '예약 취소'),
+    supabase.from('reservations').select('id').eq('slot_id', slotId).not('status', 'in', NOT_HOLDING),
   ])
   if (slotErr) throw new Error(slotErr.message)
   return {
@@ -224,6 +234,21 @@ export async function updateReservationStatus(reservationId, newStatus) {
   const { error } = await supabase
     .from('reservations')
     .update({ status: newStatus })
+    .eq('id', reservationId)
+  if (error) throw new Error(error.message)
+}
+
+// 관리자 수정: 학부모 정보·방식·내용
+export async function updateReservation(reservationId, fields) {
+  const updates = {}
+  if (fields.parentName !== undefined) updates.parent_name = fields.parentName
+  if (fields.visitorRelation !== undefined) updates.visitor_relation = fields.visitorRelation
+  if (fields.parentPhone !== undefined) updates.parent_phone = fields.parentPhone
+  if (fields.counselingMethod !== undefined) updates.counseling_method = fields.counselingMethod
+  if (fields.counselingContent !== undefined) updates.counseling_content = fields.counselingContent
+  const { error } = await supabase
+    .from('reservations')
+    .update(updates)
     .eq('id', reservationId)
   if (error) throw new Error(error.message)
 }
